@@ -60,9 +60,9 @@ export default function CustomTabBar({ state, descriptors, navigation }: Props) 
           >
             {/* Single consolidated style object — no StyleSheet merge — forces borderRadius on every render */}
             <View style={{
-              width:           60,
-              height:          60,
-              borderRadius:    30,
+              width:           72,
+              height:          72,
+              borderRadius:    36,
               overflow:        "hidden",
               backgroundColor: isFocused ? activeBg : "transparent",
               alignItems:      "center",
