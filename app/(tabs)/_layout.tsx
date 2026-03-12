@@ -170,26 +170,24 @@ export default function TabLayout() {
         tabBarActiveBackgroundColor: isDark ? colors.primary + "20" : colors.primary + "15", // Faint background (WhatsApp style)
         tabBarItemStyle: {
           borderRadius: 16,
-          marginHorizontal: 8,
-          marginVertical: 4,
-          paddingTop: 4, // Equal padding above icon
-          paddingBottom: 4, // Equal padding below text
+          marginHorizontal: 10,
+          paddingTop: 8, // 8px space above icon inside pill
+          paddingBottom: 8, // 8px space below text inside pill
         },
         tabBarStyle: {
           backgroundColor: isDark ? colors.card : "#ffffff",
           borderTopColor: isDark ? colors.border : "#e2e8f0",
           borderTopWidth: StyleSheet.hairlineWidth,
-          height: 60 + insets.bottom,
-          paddingBottom: insets.bottom + 6,
-          paddingTop: 6,
+          minHeight: 65 + insets.bottom, // Use minHeight instead of exact height to prevent squishing
+          paddingBottom: insets.bottom + 8, // 8px space completely outside the pill at bottom
+          paddingTop: 8, // 8px space completely outside the pill at top
           elevation: 0,
           shadowOpacity: 0,
         },
         tabBarLabelStyle: {
           fontFamily: FontFamily.medium,
           fontSize: 10,
-          marginBottom: 2, // Slight nudge just to give text breathing room from the pill bottom
-          marginTop: 2, // Equivalent nudge down from the icon
+          marginTop: 4, // Space between icon and text inside the pill
         },
       }}
     >
