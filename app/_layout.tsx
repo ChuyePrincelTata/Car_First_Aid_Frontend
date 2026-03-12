@@ -1,14 +1,26 @@
 
 import { useEffect, useState } from "react"
 import { Stack } from "expo-router"
-import { View, Text, ActivityIndicator } from "react-native"
+import { View, Text, ActivityIndicator, StatusBar } from "react-native"
 import * as SplashScreen from "expo-splash-screen"
 
 import { AuthProvider, useAuth } from "@/context/AuthContext"
-import { ThemeProvider } from "@/context/ThemeContext"
+import { ThemeProvider, useTheme } from "@/context/ThemeContext"
 import { DiagnosticsProvider } from "@/context/DiagnosticsContext"
 import { NotificationsProvider } from "@/context/NotificationsContext"
 import React from "react"
+
+// Controls the device status bar (time, battery, etc.) based on the current theme
+function ThemedStatusBar() {
+  const { isDark } = useTheme()
+  return (
+    <StatusBar
+      barStyle={isDark ? "light-content" : "dark-content"}
+      backgroundColor="transparent"
+      translucent
+    />
+  )
+}
 
 class AppErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -58,7 +70,12 @@ function AppContent() {
     )
   }
 
-  return <Stack screenOptions={{ headerShown: false }} />
+  return (
+    <>
+      <ThemedStatusBar />
+      <Stack screenOptions={{ headerShown: false }} />
+    </>
+  )
 }
 
 export default function RootLayout() {
