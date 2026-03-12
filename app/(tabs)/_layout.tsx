@@ -163,34 +163,24 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        sceneStyle: {
-          backgroundColor: colors.background, // Ensure background spans behind floating tab bar
-          paddingBottom: 60 + insets.bottom + 12 + 16, // Height + MarginBottom + Clearance
-        },
         // Default header for all tabs (overridden per-screen below)
         header: () => <AppHeader />,
         tabBarActiveTintColor:   colors.primary,
         tabBarInactiveTintColor: colors.tabIconDefault,
         tabBarStyle: {
           backgroundColor: isDark ? colors.card : "#ffffff",
-          borderTopWidth:  0, // Remove original border for floating effect
-          height: 60,
-          marginBottom: insets.bottom + 12,
-          marginHorizontal: 20,
-          borderRadius: 30, // Fully rounded floating pill
-          paddingBottom: 8,
+          borderTopColor: isDark ? colors.border : "#e2e8f0",
+          borderTopWidth: StyleSheet.hairlineWidth,
+          height: 60 + insets.bottom,
+          paddingBottom: insets.bottom + 8,
           paddingTop: 8,
-          elevation: 10,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: isDark ? 0.3 : 0.1,
-          shadowRadius: 8,
-          position: 'absolute', // Required for floating effect
+          elevation: 0, // Flat design, no heavy shadow
+          shadowOpacity: 0, // No shadow in WhatsApp style
         },
         tabBarLabelStyle: {
           fontFamily: FontFamily.medium,
           fontSize: 10,
-          marginTop: -4,
+          marginTop: -2,
         },
       }}
     >
