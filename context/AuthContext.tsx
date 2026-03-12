@@ -259,6 +259,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const errorText = await response.text()
             let errorDetail = "Login failed"
 
+            console.error(`Login HTTP ${response.status}:`, errorText)
+
             try {
               const errorJson = JSON.parse(errorText)
               errorDetail = errorJson.detail || errorDetail
@@ -318,43 +320,68 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error("Cannot register while offline. Please connect to the internet and try again.")
       }
 
-      console.log(`Attempting to register at ${apiUrl}/auth/register`)
+      const registerUrl = apiUrl || CLOUD_BACKEND_URL
+      const MAX_REGISTER_ATTEMPTS = 3
+      let lastError: any = null
 
-      const response = await fetchWithTimeout(`${apiUrl}/auth/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password, name, role }),
-      })
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        let errorDetail = "Registration failed"
-
+      for (let attempt = 1; attempt <= MAX_REGISTER_ATTEMPTS; attempt++) {
         try {
-          // Try to parse as JSON
-          const errorJson = JSON.parse(errorText)
-          errorDetail = errorJson.detail || errorDetail
-        } catch (e) {
-          // If not JSON, use the text directly
-          errorDetail = errorText || errorDetail
-        }
+          console.log(`Attempting to register at ${registerUrl}/auth/register (attempt ${attempt}/${MAX_REGISTER_ATTEMPTS})`)
 
-        throw new Error(errorDetail)
+          const response = await fetchWithTimeout(`${registerUrl}/auth/register`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ email, password, name, role }),
+          })
+
+          if (!response.ok) {
+            const errorText = await response.text()
+            let errorDetail = "Registration failed"
+
+            console.error(`Register HTTP ${response.status}:`, errorText)
+
+            try {
+              const errorJson = JSON.parse(errorText)
+              errorDetail = errorJson.detail || errorDetail
+            } catch (e) {
+              errorDetail = errorText || errorDetail
+            }
+
+            // Don't retry on server-side validation errors
+            throw new Error(errorDetail)
+          }
+
+          const data = await response.json()
+
+          // Save to secure storage
+          await secureStore.setItemAsync("token", data.access_token)
+          await secureStore.setItemAsync("user", JSON.stringify(data.user))
+
+          // Also save to local database for offline access
+          await saveLocalUser(data.user, password)
+
+          setToken(data.access_token)
+          setUser(data.user)
+          return // success
+
+        } catch (error: any) {
+          const isTimeout = error?.name === "AbortError" || error?.message?.includes("Aborted")
+
+          if (isTimeout && attempt < MAX_REGISTER_ATTEMPTS) {
+            console.warn(`Register attempt ${attempt} timed out. Retrying in 5s...`)
+            await new Promise((resolve) => setTimeout(resolve, 5000))
+            lastError = new Error("The server is starting up. Please wait a moment and try again.")
+            continue
+          }
+
+          lastError = error
+          break
+        }
       }
 
-      const data = await response.json()
-
-      // Save to secure storage
-      await secureStore.setItemAsync("token", data.access_token)
-      await secureStore.setItemAsync("user", JSON.stringify(data.user))
-
-      // Also save to local database for offline access
-      await saveLocalUser(data.user, password)
-
-      setToken(data.access_token)
-      setUser(data.user)
+      throw lastError
     } catch (error: any) {
       console.error("Error signing up", error)
       throw error
