@@ -1,9 +1,8 @@
 import { useState } from "react"
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, Dimensions } from "react-native"
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, Dimensions, ImageBackground } from "react-native"
 import { useTheme } from "@/context/ThemeContext"
 import { useAuth } from "@/context/AuthContext"
 import { Camera, Mic, MessageSquare, AlertTriangle, ArrowRight, Star } from "@/components/SafeLucide"
-import LinearGradient from "@/components/LinearGradient"
 import { useRouter } from "expo-router"
 import React from "react"
 import { FontFamily } from "@/constants/Theme"
@@ -40,21 +39,21 @@ export default function HomeScreen() {
       letterSpacing: -0.5,
     },
     bannerContainer: {
-      marginTop: 16,
+      marginTop: 20,
       marginHorizontal: 24,
-      borderRadius: 24,
+      borderRadius: 16,
       overflow: "hidden",
       height: 180,
-      elevation: 8,
-      shadowColor: colors.primary,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.2,
-      shadowRadius: 12,
     },
-    bannerGradient: {
+    bannerImage: {
+      width: "100%",
+      height: "100%",
+    },
+    bannerContent: {
       flex: 1,
-      padding: 24,
-      justifyContent: "space-between",
+      padding: 20,
+      justifyContent: "center",
+      backgroundColor: "rgba(0,0,0,0.5)", // Simple overlay to make text readable
     },
     bannerTitle: {
       fontSize: 28,
@@ -233,16 +232,19 @@ export default function HomeScreen() {
 
         {/* Hero Banner */}
         <View style={styles.bannerContainer}>
-          <LinearGradient colors={bannerColors} style={styles.bannerGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-            <View>
+          <ImageBackground
+            source={{ uri: "https://images.pexels.com/photos/4489732/pexels-photo-4489732.jpeg" }}
+            style={styles.bannerImage}
+          >
+            <View style={styles.bannerContent}>
               <Text style={styles.bannerTitle}>Car Issues?</Text>
               <Text style={styles.bannerText}>Get instant AI-powered diagnosis for your vehicle.</Text>
+              <TouchableOpacity style={styles.bannerButton} onPress={() => router.push("/(tabs)/diagnose")}>
+                <Text style={styles.bannerButtonText}>Diagnose Now</Text>
+                <ArrowRight size={14} color={colors.primary} />
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity style={styles.bannerButton} onPress={() => router.push("/(tabs)/diagnose")}>
-              <Text style={styles.bannerButtonText}>Diagnose Now</Text>
-              <ArrowRight size={14} color={colors.primary} />
-            </TouchableOpacity>
-          </LinearGradient>
+          </ImageBackground>
         </View>
 
         {/* Diagnostic Action Grid */}
