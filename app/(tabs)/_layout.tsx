@@ -180,15 +180,15 @@ export default function TabLayout() {
           borderTopColor: isDark ? colors.border : "#e2e8f0",
           borderTopWidth: StyleSheet.hairlineWidth,
           height: 60 + insets.bottom,
-          paddingBottom: insets.bottom + 4, // Adjusted bottom padding to let the pill sit nicely
-          paddingTop: 4,
+          paddingBottom: insets.bottom + 6, // Equal visual weight below the pill
+          paddingTop: 6, // Equal visual weight above the pill
           elevation: 0, // Flat design, no heavy shadow
           shadowOpacity: 0, // No shadow in WhatsApp style
         },
         tabBarLabelStyle: {
           fontFamily: FontFamily.medium,
           fontSize: 10,
-          marginBottom: 2, // Push text slightly up from bottom of the pill
+          marginBottom: 0, // Reset text margin to let flex properly center content
         },
       }}
     >
