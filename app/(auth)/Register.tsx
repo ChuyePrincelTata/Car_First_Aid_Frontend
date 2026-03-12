@@ -1,24 +1,40 @@
-"use client"
 
-import { useState } from "react"
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from "react-native"
+import { useState, useMemo } from "react"
+import {
+  View, Text, TextInput, TouchableOpacity, StyleSheet, Alert,
+  ActivityIndicator, ScrollView,
+} from "react-native"
 import { useRouter } from "expo-router"
 import { useAuth } from "@/context/AuthContext"
 import { useTheme } from "@/context/ThemeContext"
+import { Eye, EyeOff, CheckCircle, AlertCircle } from "@/components/SafeLucide"
 import React from "react"
 
+// Password requirement rules
+const PASSWORD_RULES = [
+  { label: "At least 8 characters",          test: (p: string) => p.length >= 8 },
+  { label: "One uppercase letter (A–Z)",      test: (p: string) => /[A-Z]/.test(p) },
+  { label: "One lowercase letter (a–z)",      test: (p: string) => /[a-z]/.test(p) },
+  { label: "One number (0–9)",                test: (p: string) => /[0-9]/.test(p) },
+  { label: "One special character (!@#$…)",   test: (p: string) => /[^A-Za-z0-9]/.test(p) },
+]
+
 export default function RegisterScreen() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [name, setName] = useState("")
-  const [role, setRole] = useState<"user" | "mechanic">("user")
-  const [isLoading, setIsLoading] = useState(false)
+  const [email, setEmail]             = useState("")
+  const [password, setPassword]       = useState("")
+  const [name, setName]               = useState("")
+  const [role, setRole]               = useState<"user" | "mechanic">("user")
+  const [showPassword, setShowPassword]           = useState(false)
+  const [showRequirements, setShowRequirements]   = useState(false)
+  const [isLoading, setIsLoading]     = useState(false)
 
-  const auth = useAuth()
-  const { colors } = useTheme()
-  const router = useRouter()
+  const auth        = useAuth()
+  const { colors }  = useTheme()
+  const router      = useRouter()
 
-  // Safety check
+  const ruleResults   = useMemo(() => PASSWORD_RULES.map(r => r.test(password)), [password])
+  const allRulesPassed = ruleResults.every(Boolean)
+
   if (!auth) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
@@ -35,13 +51,14 @@ export default function RegisterScreen() {
       return
     }
 
-    if (password.length < 6) {
-      Alert.alert("Error", "Password must be at least 6 characters long")
+    if (!email.includes("@")) {
+      Alert.alert("Error", "Please enter a valid email address")
       return
     }
 
-    if (!email.includes("@")) {
-      Alert.alert("Error", "Please enter a valid email address")
+    if (!allRulesPassed) {
+      setShowRequirements(true)
+      Alert.alert("Weak Password", "Please make sure your password meets all the requirements shown.")
       return
     }
 
@@ -54,17 +71,13 @@ export default function RegisterScreen() {
         router.replace("/(tabs)")
       }
     } catch (error) {
-      // Fix: Proper error handling for TypeScript
       const errorMessage = error instanceof Error ? error.message : "An error occurred during registration"
 
-      // Handle specific error types
-      if (errorMessage.includes("email")) {
+      if (errorMessage.includes("already registered") || errorMessage.toLowerCase().includes("email already")) {
         Alert.alert(
           "Registration Failed",
           "This email is already registered. Please use a different email or try signing in.",
         )
-      } else if (errorMessage.includes("password")) {
-        Alert.alert("Registration Failed", "Password requirements not met. Please choose a stronger password.")
       } else if (errorMessage.includes("network") || errorMessage.includes("connection")) {
         Alert.alert("Connection Error", "Please check your internet connection and try again.")
       } else {
@@ -76,139 +89,139 @@ export default function RegisterScreen() {
   }
 
   const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      padding: 20,
-      justifyContent: "center",
-      backgroundColor: colors.background,
-    },
+    container: { flex: 1, backgroundColor: colors.background },
+    scrollContent: { padding: 24, paddingTop: 48, paddingBottom: 48 },
     title: {
-      fontSize: 28,
-      fontWeight: "bold",
-      color: colors.text,
-      textAlign: "center",
-      marginBottom: 30,
+      fontSize: 28, fontWeight: "bold", color: colors.text,
+      textAlign: "center", marginBottom: 30,
     },
     input: {
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 10,
-      padding: 15,
-      marginBottom: 15,
-      fontSize: 16,
-      backgroundColor: colors.card,
-      color: colors.text,
+      borderWidth: 1, borderColor: colors.border, borderRadius: 10,
+      padding: 15, marginBottom: 15, fontSize: 16,
+      backgroundColor: colors.card, color: colors.text,
     },
-    roleContainer: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      marginBottom: 20,
+    passwordRow: {
+      flexDirection: "row", alignItems: "center",
+      borderWidth: 1, borderColor: colors.border, borderRadius: 10,
+      backgroundColor: colors.card, marginBottom: 6,
     },
+    passwordInput: { flex: 1, padding: 15, fontSize: 16, color: colors.text },
+    eyeButton: { padding: 12 },
+    reqBox: {
+      backgroundColor: colors.card, borderRadius: 10, padding: 12,
+      marginBottom: 15, borderWidth: 1, borderColor: colors.border,
+    },
+    reqTitle: { fontSize: 13, fontWeight: "600", color: colors.text, marginBottom: 8 },
+    reqRow:  { flexDirection: "row", alignItems: "center", marginBottom: 5 },
+    reqText: { fontSize: 13, marginLeft: 6 },
+    roleContainer: { flexDirection: "row", justifyContent: "space-between", marginBottom: 20 },
     roleButton: {
-      flex: 1,
-      padding: 15,
-      borderRadius: 10,
-      borderWidth: 2,
-      marginHorizontal: 5,
-      alignItems: "center",
+      flex: 1, padding: 15, borderRadius: 10,
+      borderWidth: 2, marginHorizontal: 5, alignItems: "center",
     },
-    activeRole: {
-      borderColor: colors.primary,
-      backgroundColor: colors.primary + "20",
-    },
-    inactiveRole: {
-      borderColor: colors.border,
-      backgroundColor: colors.card,
-    },
-    roleText: {
-      fontSize: 16,
-      fontWeight: "600",
-    },
+    activeRole:   { borderColor: colors.primary, backgroundColor: colors.primary + "20" },
+    inactiveRole: { borderColor: colors.border,  backgroundColor: colors.card },
+    roleText: { fontSize: 16, fontWeight: "600" },
     button: {
-      backgroundColor: colors.primary,
-      padding: 15,
-      borderRadius: 10,
-      alignItems: "center",
-      marginTop: 10,
+      backgroundColor: colors.primary, padding: 15,
+      borderRadius: 10, alignItems: "center", marginTop: 10,
     },
-    buttonText: {
-      color: colors.background,
-      fontSize: 16,
-      fontWeight: "600",
-    },
-    linkButton: {
-      marginTop: 20,
-      alignItems: "center",
-    },
-    linkText: {
-      color: colors.primary,
-      fontSize: 16,
-    },
+    buttonText: { color: colors.background, fontSize: 16, fontWeight: "600" },
+    linkButton: { marginTop: 20, alignItems: "center" },
+    linkText:   { color: colors.primary, fontSize: 16 },
   })
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Create Account</Text>
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+        <Text style={styles.title}>Create Account</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Full Name"
-        placeholderTextColor={colors.text + "80"}
-        value={name}
-        onChangeText={setName}
-        autoCapitalize="words"
-        autoCorrect={false}
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Full Name"
+          placeholderTextColor={colors.text + "80"}
+          value={name}
+          onChangeText={setName}
+          autoCapitalize="words"
+          autoCorrect={false}
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        placeholderTextColor={colors.text + "80"}
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-        autoCorrect={false}
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          placeholderTextColor={colors.text + "80"}
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Password (min 6 characters)"
-        placeholderTextColor={colors.text + "80"}
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        autoCapitalize="none"
-        autoCorrect={false}
-      />
+        {/* Password with visibility toggle */}
+        <View style={styles.passwordRow}>
+          <TextInput
+            style={styles.passwordInput}
+            placeholder="Password"
+            placeholderTextColor={colors.text + "80"}
+            value={password}
+            onChangeText={(t) => { setPassword(t); setShowRequirements(true) }}
+            secureTextEntry={!showPassword}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <TouchableOpacity style={styles.eyeButton} onPress={() => setShowPassword(v => !v)}>
+            {showPassword
+              ? <EyeOff size={20} color={colors.text + "80"} />
+              : <Eye    size={20} color={colors.text + "80"} />
+            }
+          </TouchableOpacity>
+        </View>
 
-      <View style={styles.roleContainer}>
-        <TouchableOpacity
-          style={[styles.roleButton, role === "user" ? styles.activeRole : styles.inactiveRole]}
-          onPress={() => setRole("user")}
-        >
-          <Text style={[styles.roleText, { color: role === "user" ? colors.primary : colors.text }]}>User</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.roleButton, role === "mechanic" ? styles.activeRole : styles.inactiveRole]}
-          onPress={() => setRole("mechanic")}
-        >
-          <Text style={[styles.roleText, { color: role === "mechanic" ? colors.primary : colors.text }]}>Mechanic</Text>
-        </TouchableOpacity>
-      </View>
-
-      <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={isLoading}>
-        {isLoading ? (
-          <ActivityIndicator color={colors.background} />
-        ) : (
-          <Text style={styles.buttonText}>Create Account</Text>
+        {/* Live password requirements — appears once user starts typing */}
+        {showRequirements && (
+          <View style={styles.reqBox}>
+            <Text style={styles.reqTitle}>Password requirements:</Text>
+            {PASSWORD_RULES.map((rule, i) => (
+              <View key={i} style={styles.reqRow}>
+                {ruleResults[i]
+                  ? <CheckCircle size={14} color="#22c55e" />
+                  : <AlertCircle size={14} color="#ef4444" />
+                }
+                <Text style={[styles.reqText, { color: ruleResults[i] ? "#22c55e" : "#ef4444" }]}>
+                  {rule.label}
+                </Text>
+              </View>
+            ))}
+          </View>
         )}
-      </TouchableOpacity>
 
-      <TouchableOpacity style={styles.linkButton} onPress={() => router.push("/(auth)/Login")}>
-        <Text style={styles.linkText}>Already have an account? Sign In</Text>
-      </TouchableOpacity>
+        {/* Role selector */}
+        <View style={styles.roleContainer}>
+          <TouchableOpacity
+            style={[styles.roleButton, role === "user" ? styles.activeRole : styles.inactiveRole]}
+            onPress={() => setRole("user")}
+          >
+            <Text style={[styles.roleText, { color: role === "user" ? colors.primary : colors.text }]}>User</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.roleButton, role === "mechanic" ? styles.activeRole : styles.inactiveRole]}
+            onPress={() => setRole("mechanic")}
+          >
+            <Text style={[styles.roleText, { color: role === "mechanic" ? colors.primary : colors.text }]}>Mechanic</Text>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={isLoading}>
+          {isLoading
+            ? <ActivityIndicator color={colors.background} />
+            : <Text style={styles.buttonText}>Create Account</Text>
+          }
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.linkButton} onPress={() => router.push("/(auth)/Login")}>
+          <Text style={styles.linkText}>Already have an account? Sign In</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </View>
   )
 }

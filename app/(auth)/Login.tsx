@@ -1,10 +1,9 @@
-"use client"
 
 import { useState } from "react"
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Image, ScrollView, Alert } from "react-native"
-import { useRouter, Link } from "expo-router"
-import { Lock, Mail } from "lucide-react-native"
-import { LinearGradient } from "expo-linear-gradient"
+import { useRouter } from "expo-router"
+import { Lock, Mail, Eye, EyeOff } from "@/components/SafeLucide"
+import LinearGradient from "@/components/LinearGradient"
 import { useAuth } from "@/context/AuthContext"
 import { useTheme } from "@/context/ThemeContext"
 import React from "react"
@@ -12,6 +11,7 @@ import React from "react"
 export default function LoginScreen() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
   const router = useRouter()
   const { signIn, isLoading } = useAuth()
@@ -156,8 +156,14 @@ export default function LoginScreen() {
               placeholderTextColor={colors.tabIconDefault}
               value={password}
               onChangeText={setPassword}
-              secureTextEntry
+              secureTextEntry={!showPassword}
             />
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={{ padding: 4 }}>
+              {showPassword
+                ? <EyeOff size={20} color={colors.tabIconDefault} />
+                : <Eye size={20} color={colors.tabIconDefault} />
+              }
+            </TouchableOpacity>
           </View>
 
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -181,11 +187,9 @@ export default function LoginScreen() {
 
           <View style={styles.signupContainer}>
             <Text style={styles.signupText}>Don't have an account?</Text>
-            <Link href="/Register" asChild>
-              <TouchableOpacity>
-                <Text style={styles.signupLink}>Sign Up</Text>
-              </TouchableOpacity>
-            </Link>
+            <TouchableOpacity onPress={() => router.push("/(auth)/Register")}>
+              <Text style={styles.signupLink}>Sign Up</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
