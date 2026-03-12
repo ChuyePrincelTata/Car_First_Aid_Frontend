@@ -111,9 +111,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   pill: {
-    width: 60,                // Equal width and height = perfect circle rounding
-    height: 60,               // Equal width and height = perfect circle rounding
-    borderRadius: 30,         // Exactly half of 60 = perfect circle arcs on all sides
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    overflow: "hidden",       // Critical on Android: forces the background to respect borderRadius on every render
     alignItems: "center",
     justifyContent: "center",
     gap: 3,
