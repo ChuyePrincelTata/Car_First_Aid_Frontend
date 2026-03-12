@@ -26,7 +26,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useRouter } from "expo-router"
 import { useTheme } from "@/context/ThemeContext"
-import { Search, X, Camera, MessageSquare, History, User, Home, AlertCircle } from "@/components/SafeLucide"
+import { Search, X, Camera, MessageSquare, History, User, Home, AlertCircle, Bell } from "@/components/SafeLucide"
 import { FontSize, FontFamily, Spacing, Radius, Shadows } from "@/constants/Theme"
 
 // ─── Searchable items ────────────────────────────────────────────────────────
@@ -65,6 +65,15 @@ const SEARCH_CORPUS: SearchItem[] = [
     tags: ["photo", "camera", "ai", "analyse", "diagnose", "issue", "fault", "warning", "light", "scan"],
   },
   {
+    id: "notifications",
+    title: "Notifications",
+    subtitle: "Alerts and updates",
+    category: "Navigate",
+    icon: null,
+    route: "/notifications",
+    tags: ["notification", "alert", "bell", "update", "message", "inbox"],
+  },
+  {
     id: "mechanics",
     title: "Find a Mechanic",
     subtitle: "Connect with certified mechanics",
@@ -99,6 +108,24 @@ const SEARCH_CORPUS: SearchItem[] = [
     icon: null,
     route: "/(tabs)/diagnose/sound",
     tags: ["sound", "noise", "knocking", "rattling", "engine", "audio", "record"],
+  },
+  {
+    id: "dashboardIcon",
+    title: "Dashboard Lights",
+    subtitle: "Scan a warning light on your dash",
+    category: "Diagnose",
+    icon: null,
+    route: "/(tabs)/diagnose/dashboard_result",
+    tags: ["dashboard", "light", "scan", "warning", "icon", "symbol", "photo"],
+  },
+  {
+    id: "enginePart",
+    title: "Engine Parts",
+    subtitle: "Scan an engine component",
+    category: "Diagnose",
+    icon: null,
+    route: "/(tabs)/diagnose/engine_result",
+    tags: ["engine", "part", "component", "under hood", "scan", "photo"],
   },
   {
     id: "manual",
@@ -381,6 +408,9 @@ export default function SearchModal({ visible, onClose }: SearchModalProps) {
       case "mechanics":return <MessageSquare size={size} color={color} />
       case "history":  return <History       size={size} color={color} />
       case "profile":  return <User          size={size} color={color} />
+      case "notifications":return <Bell          size={size} color={color} />
+      case "dashboardIcon":return <Camera        size={size} color={color} />
+      case "enginePart": return <Camera        size={size} color={color} />
       default:         return <Search        size={size} color={color} />
     }
   }
