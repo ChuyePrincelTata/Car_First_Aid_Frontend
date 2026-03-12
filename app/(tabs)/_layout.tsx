@@ -167,28 +167,61 @@ export default function TabLayout() {
         header: () => <AppHeader />,
         tabBarActiveTintColor:   colors.primary, // Back to Navy/Gold since background is now faint
         tabBarInactiveTintColor: colors.tabIconDefault,
-        tabBarActiveBackgroundColor: isDark ? colors.primary + "20" : colors.primary + "15", // Faint background (WhatsApp style)
-        tabBarItemStyle: {
-          borderRadius: 16,
-          marginHorizontal: 4, // Reduced so "Mechanics" fits without truncating
-          paddingTop: 10, // 10px below top of pill background
-          paddingBottom: 10, // 10px above bottom of pill background
-        },
         tabBarStyle: {
           backgroundColor: isDark ? colors.card : "#ffffff",
           borderTopColor: isDark ? colors.border : "#e2e8f0",
           borderTopWidth: StyleSheet.hairlineWidth,
-          height: 72 + insets.bottom, // Explicitly tall enough to contain the full pill height
-          paddingBottom: insets.bottom + 8, // 8px below the outer pill
-          paddingTop: 8, // 8px above the outer pill
+          height: 65 + insets.bottom,
+          paddingBottom: insets.bottom,
           elevation: 0,
           shadowOpacity: 0,
+        },
+        tabBarButton: (props) => {
+          const isFocused = props.accessibilityState?.selected;
+          const { onPress, onLongPress, accessibilityState, accessibilityLabel, testID } = props;
+          
+          return (
+            <TouchableOpacity
+              onPress={onPress ?? undefined}
+              onLongPress={onLongPress ?? undefined}
+              accessibilityState={accessibilityState}
+              accessibilityLabel={accessibilityLabel}
+              testID={testID}
+              activeOpacity={0.8}
+              style={{
+                flex: 1,
+                alignItems: "center",
+                justifyContent: "center",
+                paddingVertical: 6,
+              }}
+            >
+              <View
+                style={{
+                  alignItems: "center",
+                  justifyContent: "center",
+                  paddingVertical: 8,
+                  paddingHorizontal: 20,
+                  backgroundColor: isFocused
+                    ? isDark
+                      ? colors.primary + "20"
+                      : colors.primary + "15"
+                    : "transparent",
+                  borderRadius: 16,
+                }}
+              >
+                {/* 
+                  React Navigation passes down the children which includes both the Icon and the Label. 
+                  By wrapping them in this View, the background is mathematically forced to cover both.
+                */}
+                {props.children}
+              </View>
+            </TouchableOpacity>
+          );
         },
         tabBarLabelStyle: {
           fontFamily: FontFamily.medium,
           fontSize: 10,
-          marginTop: 2, // Space strictly between icon and text inside the pill
-          marginBottom: 0,
+          marginTop: 4, 
         },
       }}
     >
