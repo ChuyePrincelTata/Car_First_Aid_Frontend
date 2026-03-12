@@ -1,9 +1,9 @@
-"use client"
+
 
 import { useState } from "react"
 import { StyleSheet, Text, View, FlatList, TouchableOpacity, Image, TextInput } from "react-native"
 import { useTheme } from "@/context/ThemeContext"
-import { Search, Star, MapPin, MessageSquare, CheckCircle } from "lucide-react-native"
+import { Search, Star, MapPin, MessageSquare, CheckCircle } from "@/components/SafeLucide"
 import { useRouter } from "expo-router"
 import React from "react"
 
@@ -92,7 +92,7 @@ export default function MechanicsScreen() {
       backgroundColor: colors.background,
     },
     header: {
-      paddingTop: 60,
+      paddingTop: 16,
       paddingHorizontal: 24,
       paddingBottom: 20,
     },
