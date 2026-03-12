@@ -111,12 +111,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   pill: {
-    width: 64,                // EVERY pill is exactly 64px wide — no exceptions
-    height: 56,               // EVERY pill is exactly 56px tall — no exceptions
-    borderRadius: 999,        // Perfect circle arcs on all corners
+    width: 60,                // Equal width and height = perfect circle rounding
+    height: 60,               // Equal width and height = perfect circle rounding
+    borderRadius: 30,         // Exactly half of 60 = perfect circle arcs on all sides
     alignItems: "center",
     justifyContent: "center",
-    gap: 2,
+    gap: 3,
   },
   label: {
     fontFamily: FontFamily.medium,
