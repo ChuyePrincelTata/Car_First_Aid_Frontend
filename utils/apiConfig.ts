@@ -1,18 +1,20 @@
 import { Platform } from "react-native"
 
 // Cloud backend URL - UPDATE THIS after Render deployment
-const CLOUD_BACKEND_URL = "https://your-app-name.onrender.com/api"
+export const CLOUD_BACKEND_URL = "https://car-fault-backend.onrender.com/api"
+const USE_CLOUD_BACKEND = true
 
-// Timeouts (longer for mobile networks)
-const HEALTH_CHECK_TIMEOUT = 15000 // 15 seconds for mobile networks
-const API_TIMEOUT = 30000 // 30 seconds for mobile API calls
+// Timeouts — Render free tier cold-starts can take 50–90 seconds
+const HEALTH_CHECK_TIMEOUT = 90000 // 90 seconds to survive Render cold-start
+const API_TIMEOUT = 60000          // 60 seconds per API call
+const HEALTH_CHECK_RETRIES = 4     // retry up to 4 times before giving up
 
 /**
  * Returns the API base URL with /api path
  */
 export const getApiBaseUrl = (): string => {
   // Always try cloud backend first if it's configured
-  if (CLOUD_BACKEND_URL !== "https://your-app-name.onrender.com/api") {
+  if (USE_CLOUD_BACKEND) {
     return CLOUD_BACKEND_URL
   }
 
@@ -40,28 +42,46 @@ export const getBaseUrl = (): string => {
 }
 
 /**
- * Tests if a connection to the given URL is possible
+ * Tests if a connection to the given URL is possible.
+ * Retries up to HEALTH_CHECK_RETRIES times to handle Render cold-starts.
  */
 export const testConnection = async (url: string): Promise<boolean> => {
-  try {
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), HEALTH_CHECK_TIMEOUT)
+  for (let attempt = 1; attempt <= HEALTH_CHECK_RETRIES; attempt++) {
+    try {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), HEALTH_CHECK_TIMEOUT)
 
-    const response = await fetch(`${url}/health`, {
-      method: "GET",
-      signal: controller.signal,
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-    })
+      console.log(`Health check attempt ${attempt}/${HEALTH_CHECK_RETRIES} for ${url}...`)
 
-    clearTimeout(timeoutId)
-    return response.ok
-  } catch (error) {
-    console.error("Connection test failed:", error)
-    return false
+      const response = await fetch(`${url}/health`, {
+        method: "GET",
+        signal: controller.signal,
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      })
+
+      clearTimeout(timeoutId)
+
+      if (response.ok) {
+        console.log(`Health check succeeded on attempt ${attempt}`)
+        return true
+      }
+
+      console.warn(`Health check returned status ${response.status} on attempt ${attempt}`)
+    } catch (error) {
+      console.warn(`Health check attempt ${attempt} failed:`, error)
+    }
+
+    // Wait 3 seconds before retrying (except on the last attempt)
+    if (attempt < HEALTH_CHECK_RETRIES) {
+      await new Promise((resolve) => setTimeout(resolve, 3000))
+    }
   }
+
+  console.error(`All ${HEALTH_CHECK_RETRIES} health check attempts failed for ${url}`)
+  return false
 }
 
 /**
@@ -71,7 +91,7 @@ export const findWorkingConnection = async (): Promise<string | null> => {
   const possibleUrls: string[] = []
 
   // Try cloud backend first (this is what we want for mobile)
-  if (CLOUD_BACKEND_URL !== "https://your-app-name.onrender.com/api") {
+  if (USE_CLOUD_BACKEND) {
     possibleUrls.push(CLOUD_BACKEND_URL)
   }
 
@@ -137,7 +157,7 @@ API URL: ${getApiBaseUrl()}
 Base URL: ${getBaseUrl()}
 Cloud Backend: ${CLOUD_BACKEND_URL}
 
-Status: ${CLOUD_BACKEND_URL !== "https://your-app-name.onrender.com/api" ? "✅ Using Cloud Backend" : "⚠️ Using Local Development"}
+Status: ${USE_CLOUD_BACKEND ? "? Using Cloud Backend" : "?? Using Local Development"}
 
 Note: This is a mobile app. Cloud backend allows access from any device.`
 }

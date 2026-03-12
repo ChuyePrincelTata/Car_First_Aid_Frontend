@@ -1,10 +1,10 @@
-"use client"
+
 
 import React from "react"
 import { createContext, useContext, useEffect, useState } from "react"
 import * as SecureStore from "expo-secure-store"
 import { Platform } from "react-native"
-import { getApiBaseUrl, fetchWithTimeout, findWorkingConnection } from "@/utils/apiConfig"
+import { getApiBaseUrl, fetchWithTimeout, findWorkingConnection, CLOUD_BACKEND_URL } from "@/utils/apiConfig"
 import * as SQLite from "expo-sqlite"
 import NetInfo from "@react-native-community/netinfo"
 
@@ -236,44 +236,70 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
 
-      // Online authentication
-      console.log(`Attempting to sign in to ${apiUrl}/auth/login`)
+      // Online authentication — use current apiUrl, fall back to cloud URL
+      const loginUrl = apiUrl || CLOUD_BACKEND_URL
 
-      const response = await fetchWithTimeout(`${apiUrl}/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      })
+      // Retry up to 3 times on timeout (AbortError) — Render DB pool warms up lazily
+      const MAX_LOGIN_ATTEMPTS = 3
+      let lastError: any = null
 
-      if (!response.ok) {
-        const errorText = await response.text()
-        let errorDetail = "Login failed"
-
+      for (let attempt = 1; attempt <= MAX_LOGIN_ATTEMPTS; attempt++) {
         try {
-          // Try to parse as JSON
-          const errorJson = JSON.parse(errorText)
-          errorDetail = errorJson.detail || errorDetail
-        } catch (e) {
-          // If not JSON, use the text directly
-          errorDetail = errorText || errorDetail
-        }
+          console.log(`Attempting to sign in to ${loginUrl}/auth/login (attempt ${attempt}/${MAX_LOGIN_ATTEMPTS})`)
 
-        throw new Error(errorDetail)
+          const response = await fetchWithTimeout(`${loginUrl}/auth/login`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ email, password }),
+          })
+
+          if (!response.ok) {
+            const errorText = await response.text()
+            let errorDetail = "Login failed"
+
+            try {
+              const errorJson = JSON.parse(errorText)
+              errorDetail = errorJson.detail || errorDetail
+            } catch (e) {
+              errorDetail = errorText || errorDetail
+            }
+
+            // Don't retry on auth errors (wrong password, etc.)
+            throw new Error(errorDetail)
+          }
+
+          const data = await response.json()
+
+          // Save to secure storage
+          await secureStore.setItemAsync("token", data.access_token)
+          await secureStore.setItemAsync("user", JSON.stringify(data.user))
+
+          // Also save to local database for offline access
+          await saveLocalUser(data.user, password)
+
+          setToken(data.access_token)
+          setUser(data.user)
+          return // success — exit the retry loop
+
+        } catch (error: any) {
+          const isTimeout = error?.name === "AbortError" || error?.message?.includes("Aborted")
+
+          if (isTimeout && attempt < MAX_LOGIN_ATTEMPTS) {
+            console.warn(`Login attempt ${attempt} timed out, server may still be warming up. Retrying in 5s...`)
+            await new Promise((resolve) => setTimeout(resolve, 5000))
+            lastError = new Error("The server is starting up. Please wait a moment and try again.")
+            continue
+          }
+
+          // Not a timeout, or last attempt — propagate
+          lastError = error
+          break
+        }
       }
 
-      const data = await response.json()
-
-      // Save to secure storage
-      await secureStore.setItemAsync("token", data.access_token)
-      await secureStore.setItemAsync("user", JSON.stringify(data.user))
-
-      // Also save to local database for offline access
-      await saveLocalUser(data.user, password)
-
-      setToken(data.access_token)
-      setUser(data.user)
+      throw lastError
     } catch (error: any) {
       console.error("Error signing in", error)
       throw error
