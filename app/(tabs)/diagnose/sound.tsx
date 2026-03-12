@@ -1,10 +1,10 @@
-"use client"
+
 
 import { useState, useRef, useEffect } from "react"
 import { StyleSheet, Text, View, TouchableOpacity, ActivityIndicator, ScrollView } from "react-native"
-import { Mic, Pause, Play, StopCircle } from "lucide-react-native"
+import { Mic, Pause, Play, StopCircle } from "@/components/SafeLucide"
 import { Audio } from "expo-av"
-import { LinearGradient } from "expo-linear-gradient"
+import LinearGradient from "@/components/LinearGradient"
 import { useTheme } from "@/context/ThemeContext"
 import Animated, {
   useSharedValue,

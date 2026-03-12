@@ -1,13 +1,13 @@
-"use client"
+
 
 import { useState, useEffect } from "react"
 import { StyleSheet, Text, View, TouchableOpacity, Image, ScrollView, ActivityIndicator, Alert } from "react-native"
 import { useTheme } from "@/context/ThemeContext"
 import { useAuth } from "@/context/AuthContext"
 import { useRouter } from "expo-router"
-import { Upload, CheckCircle, FileText } from "lucide-react-native"
+import { Upload, CheckCircle, FileText } from "@/components/SafeLucide"
 import * as ImagePicker from "expo-image-picker"
-import { LinearGradient } from "expo-linear-gradient"
+import LinearGradient from "@/components/LinearGradient"
 import React from "react"
 
 export default function MechanicVerificationScreen() {

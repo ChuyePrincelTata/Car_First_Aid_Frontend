@@ -1,4 +1,3 @@
-"use client"
 
 import { useEffect, useState } from "react"
 import { Stack } from "expo-router"
@@ -11,10 +10,38 @@ import { DiagnosticsProvider } from "@/context/DiagnosticsContext"
 import { NotificationsProvider } from "@/context/NotificationsContext"
 import React from "react"
 
-export {
-  // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
-} from "expo-router"
+class AppErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error?: Error }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props)
+    this.state = { hasError: false }
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error }
+  }
+
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error("AppErrorBoundary caught error:", error)
+    console.error("Component stack:", info.componentStack)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <Text style={{ fontSize: 18, marginBottom: 8 }}>Something went wrong.</Text>
+          <Text style={{ fontSize: 12, textAlign: "center" }}>{this.state.error?.message}</Text>
+        </View>
+      )
+    }
+    return this.props.children
+  }
+}
+
+export const ErrorBoundary = AppErrorBoundary
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync()
@@ -31,22 +58,7 @@ function AppContent() {
     )
   }
 
-  return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="(mechanic)" options={{ headerShown: false }} />
-      <Stack.Screen name="notifications" options={{ presentation: "modal" }} />
-      <Stack.Screen
-        name="connection-test"
-        options={{
-          title: "Connection Test",
-          headerShown: true,
-        }}
-      />
-    </Stack>
-  )
+  return <Stack screenOptions={{ headerShown: false }} />
 }
 
 export default function RootLayout() {
@@ -86,7 +98,9 @@ export default function RootLayout() {
       <AuthProvider>
         <DiagnosticsProvider>
           <NotificationsProvider>
-            <AppContent />
+            <AppErrorBoundary>
+              <AppContent />
+            </AppErrorBoundary>
           </NotificationsProvider>
         </DiagnosticsProvider>
       </AuthProvider>

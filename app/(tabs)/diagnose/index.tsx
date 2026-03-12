@@ -1,12 +1,12 @@
-"use client"
+
 
 import { useState, useRef } from "react"
 import { StyleSheet, Text, View, TouchableOpacity, Image, ActivityIndicator, ScrollView } from "react-native"
-import { Camera, Upload } from "lucide-react-native"
+import { Camera, Upload } from "@/components/SafeLucide"
 import { useTheme } from "@/context/ThemeContext"
 import { CameraView } from "expo-camera"
 import * as ImagePicker from "expo-image-picker"
-import { LinearGradient } from "expo-linear-gradient"
+import LinearGradient from "@/components/LinearGradient"
 import { useCameraPermissions } from "expo-camera"
 import { useRouter } from "expo-router"
 import { getApiBaseUrl } from "@/utils/apiConfig"

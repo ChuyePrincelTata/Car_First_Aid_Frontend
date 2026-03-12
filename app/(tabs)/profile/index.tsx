@@ -1,4 +1,4 @@
-"use client"
+
 
 import React from "react"
 import { StyleSheet, Text, View, TouchableOpacity, Image, ScrollView, Alert, TextInput } from "react-native"
@@ -34,7 +34,7 @@ import {
   HelpCircle,
   MapPin,
   Phone,
-} from "lucide-react-native"
+} from "@/components/SafeLucide"
 
 const ProfileScreen: React.FC = () => {
   const { user, signOut } = useAuth() as { user: User; signOut: () => Promise<void> }
@@ -56,7 +56,7 @@ const ProfileScreen: React.FC = () => {
   const handleSignOut = async () => {
     try {
       await signOut()
-      router.replace("/Login")
+      router.replace("/(auth)/Login")
     } catch (error) {
       console.error("Error signing out:", error)
     }

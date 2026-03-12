@@ -163,6 +163,10 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
+        sceneStyle: {
+          backgroundColor: colors.background, // Ensure background spans behind floating tab bar
+          paddingBottom: 60 + insets.bottom + 12 + 16, // Height + MarginBottom + Clearance
+        },
         // Default header for all tabs (overridden per-screen below)
         header: () => <AppHeader />,
         tabBarActiveTintColor:   colors.primary,

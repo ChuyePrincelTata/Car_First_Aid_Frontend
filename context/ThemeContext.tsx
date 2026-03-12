@@ -1,60 +1,15 @@
-"use client"
+
 
 import React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
-import { ColorValue, useColorScheme } from "react-native"
-
-type Theme = {
-  colors: {
-    success: ColorValue | undefined
-    error: any
-    secondary: any
-    tabIconDefault: ColorValue | undefined
-    primary: string
-    background: string
-    card: string
-    text: string
-    border: string
-    notification: string
-  }
-  dark: boolean
-}
+import { useColorScheme } from "react-native"
+import Colors from "@/constants/Colors"
 
 type ThemeContextType = {
-  theme: Theme
-  colors: Theme["colors"]
+  theme: "light" | "dark"
+  colors: typeof Colors.light
   toggleTheme: () => void
   isDark: boolean
-}
-
-const lightTheme: Theme = {
-  colors: {
-    primary: "#FFC700",
-    background: "#FFFFFF",
-    card: "#F2F2F7",
-    text: "#000000",
-    border: "#C6C6C8",
-    notification: "#FF3B30",
-    error: undefined,
-    secondary: undefined,
-    tabIconDefault: undefined
-  },
-  dark: false,
-}
-
-const darkTheme: Theme = {
-  colors: {
-    primary: "#FFC700",
-    background: "#000000",
-    card: "#1C1C1E",
-    text: "#FFFFFF",
-    border: "#38383A",
-    notification: "#FF453A",
-    error: undefined,
-    secondary: undefined,
-    tabIconDefault: undefined
-  },
-  dark: true,
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
@@ -67,7 +22,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setIsDark(systemColorScheme === "dark")
   }, [systemColorScheme])
 
-  const theme = isDark ? darkTheme : lightTheme
+  const themeName: "light" | "dark" = isDark ? "dark" : "light"
+  const colors = Colors[themeName]
 
   const toggleTheme = () => {
     setIsDark(!isDark)
@@ -76,8 +32,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <ThemeContext.Provider
       value={{
-        theme,
-        colors: theme.colors,
+        theme: themeName,
+        colors,
         toggleTheme,
         isDark,
       }}

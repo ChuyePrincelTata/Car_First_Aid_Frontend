@@ -1,10 +1,10 @@
-"use client"
+
 
 import { useEffect, useState } from "react"
 import { View, Text, StyleSheet, Pressable, ScrollView, Linking, ActivityIndicator, useColorScheme } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useRouter, useLocalSearchParams } from "expo-router"
-import { LinearGradient } from "expo-linear-gradient"
+import LinearGradient from "@/components/LinearGradient"
 import {
   ChevronLeft,
   ChevronRight,
@@ -13,7 +13,7 @@ import {
   Share2,
   ThumbsUp,
   ThumbsDown,
-} from "lucide-react-native"
+} from "@/components/SafeLucide"
 import Animated, { FadeIn } from "react-native-reanimated"
 import { useDiagnosticsContext } from "@/context/DiagnosticsContext"
 import type Colors from "@/constants/Colors"

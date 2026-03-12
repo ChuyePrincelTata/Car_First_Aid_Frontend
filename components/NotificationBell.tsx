@@ -1,6 +1,6 @@
-"use client"
+
 import { TouchableOpacity, View, Text, StyleSheet } from "react-native"
-import { Bell } from "lucide-react-native"
+import { Bell } from "@/components/SafeLucide"
 import { useTheme } from "@/context/ThemeContext"
 import { useRouter } from "expo-router"
 import React from "react"

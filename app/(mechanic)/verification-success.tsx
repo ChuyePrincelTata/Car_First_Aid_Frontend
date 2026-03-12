@@ -1,9 +1,9 @@
-"use client"
+
 import { StyleSheet, Text, View, TouchableOpacity } from "react-native"
 import { useTheme } from "@/context/ThemeContext"
 import { useRouter } from "expo-router"
-import { CheckCircle } from "lucide-react-native"
-import { LinearGradient } from "expo-linear-gradient"
+import { CheckCircle } from "@/components/SafeLucide"
+import LinearGradient from "@/components/LinearGradient"
 import React from "react"
 
 export default function VerificationSuccessScreen() {
@@ -72,7 +72,7 @@ export default function VerificationSuccessScreen() {
         typically within 1-2 business days.
       </Text>
 
-      <TouchableOpacity style={styles.button} onPress={() => router.replace("/")}>
+      <TouchableOpacity style={styles.button} onPress={() => router.replace("/(tabs)")}>
         <LinearGradient
           colors={["#FFD700", "#FFC000"]}
           start={{ x: 0, y: 0 }}

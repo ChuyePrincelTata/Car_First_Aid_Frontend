@@ -1,10 +1,10 @@
-"use client"
+
 
 import { useState } from "react"
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native"
 import { useTheme } from "@/context/ThemeContext"
-import { AlertTriangle } from "lucide-react-native"
-import { LinearGradient } from "expo-linear-gradient"
+import { AlertTriangle } from "@/components/SafeLucide"
+import LinearGradient from "@/components/LinearGradient"
 import React from "react"
 
 export default function ManualDiagnosisScreen() {
