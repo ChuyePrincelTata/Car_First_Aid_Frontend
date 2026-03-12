@@ -22,7 +22,7 @@ export default function HomeScreen() {
     header: {
       paddingTop: 16,
       paddingHorizontal: 24,
-      paddingBottom: 8,
+      paddingBottom: 0, // Reduced from 8 to tighten gap
     },
     greeting: {
       fontSize: 14,
@@ -39,7 +39,7 @@ export default function HomeScreen() {
       letterSpacing: -0.5,
     },
     bannerContainer: {
-      marginTop: 20,
+      marginTop: 8, // Reduced from 20 to bring banner closer to text
       marginHorizontal: 24,
       borderRadius: 16,
       overflow: "hidden",
