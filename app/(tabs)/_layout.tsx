@@ -1,105 +1,115 @@
 /**
  * (tabs)/_layout.tsx
  *
- * Tab navigator with a custom branded header.
+ * Tab navigator with a branded two-row header:
  *
- * Safe area handling:
- *  - Header uses useSafeAreaInsets().top so it sits correctly below the
- *    status bar on ALL devices (notched iPhones, tall Android status bars, etc.)
- *  - Tab bar uses useSafeAreaInsets().bottom so it never overlaps the
- *    device home indicator / Android nav buttons
+ * Row 1:  [Logo] Car First Aid        [🔔]  [Avatar]
+ * Row 2:  [🔍 Search screens, issues, mechanics…   ]
  *
- * Header layout:
- * ┌──────────────────────────────────────────────────────────┐
- * │  [Logo] Car First Aid        Good morning, John 👋 🔔 🟡│
- * └──────────────────────────────────────────────────────────┘
+ * Tapping the search bar opens a full-screen SearchModal.
+ * Safe area insets are used throughout so nothing is clipped or overlaps.
  */
 
-import { Image, View, Text, StyleSheet, TouchableOpacity, Platform } from "react-native"
+import { Image, View, Text, TextInput, StyleSheet, TouchableOpacity } from "react-native"
 import { Tabs, useRouter } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { Camera, Home, User, History, MessageSquare, Bell } from "@/components/SafeLucide"
+import { Camera, Home, User, History, MessageSquare, Bell, Search } from "@/components/SafeLucide"
 import { useTheme } from "@/context/ThemeContext"
 import { useAuth } from "@/context/AuthContext"
 import UserAvatar from "@/components/UserAvatar"
-import React, { useMemo } from "react"
+import SearchModal from "@/components/SearchModal"
+import React, { useState } from "react"
+import { FontSize, FontFamily, Spacing, Radius } from "@/constants/Theme"
 
-// ─── Time-based greeting ────────────────────────────────────────────────────
-function getGreeting(): string {
-  const h = new Date().getHours()
-  if (h < 12) return "Good morning"
-  if (h < 17) return "Good afternoon"
-  return "Good evening"
-}
-
-// ─── Custom header component ────────────────────────────────────────────────
+// ─── Custom header ───────────────────────────────────────────────────────────
 function AppHeader() {
   const { colors, isDark } = useTheme()
   const { user }           = useAuth()
   const router             = useRouter()
   const insets             = useSafeAreaInsets()
-
-  const greeting = useMemo(
-    () => `${getGreeting()}, ${user?.name?.split(" ")[0] ?? "there"} 👋`,
-    [user],
-  )
+  const [searchOpen, setSearchOpen] = useState(false)
 
   return (
-    <View
-      style={[
-        styles.header,
-        {
-          // paddingTop = safe-area top inset + our own inner padding
-          paddingTop: insets.top + 10,
-          backgroundColor: isDark ? colors.card : "#ffffff",
-          borderBottomColor: colors.border,
-        },
-      ]}
-    >
-      {/* LEFT — logo + app name */}
-      <View style={styles.left}>
-        <Image
-          source={require("../../assets/images/logo.jpg")}
-          style={styles.logo}
-          resizeMode="cover"
-        />
-        <Text style={[styles.appName, { color: colors.primary }]}>Car First Aid</Text>
-      </View>
+    <>
+      <View
+        style={[
+          s.header,
+          {
+            paddingTop: insets.top + 8,
+            backgroundColor: isDark ? colors.card : "#ffffff",
+            borderBottomColor: colors.border,
+          },
+        ]}
+      >
+        {/* ── Row 1: logo + name | bell + avatar ── */}
+        <View style={s.row1}>
+          {/* Left */}
+          <View style={s.left}>
+            <Image
+              source={require("../../assets/images/logo.jpg")}
+              style={s.logo}
+              resizeMode="cover"
+            />
+            <Text style={[s.appName, { color: colors.primary }]}>Car First Aid</Text>
+          </View>
 
-      {/* RIGHT — greeting + bell + avatar */}
-      <View style={styles.right}>
-        <Text style={[styles.greeting, { color: colors.subtext }]} numberOfLines={1}>
-          {greeting}
-        </Text>
+          {/* Right — bell + avatar with explicit gap */}
+          <View style={s.right}>
+            <TouchableOpacity
+              style={[s.bellBtn, { backgroundColor: isDark ? colors.background : "#f1f5f9" }]}
+              onPress={() => router.push("/notifications")}
+              activeOpacity={0.75}
+            >
+              <Bell size={17} color={colors.primary} />
+            </TouchableOpacity>
 
+            {/* 16px explicit gap */}
+            <View style={{ width: 16 }} />
+
+            <UserAvatar size={34} onPress={() => router.push("/(tabs)/profile")} />
+          </View>
+        </View>
+
+        {/* ── Row 2: tappable search bar ── */}
         <TouchableOpacity
-          style={[styles.bellBtn, { backgroundColor: isDark ? colors.background : colors.border }]}
-          onPress={() => router.push("/notifications")}
-          activeOpacity={0.75}
+          style={[
+            s.searchBar,
+            { backgroundColor: isDark ? colors.background : "#f1f5f9" },
+          ]}
+          onPress={() => setSearchOpen(true)}
+          activeOpacity={0.7}
         >
-          <Bell size={17} color={colors.primary} />
+          <Search size={15} color={colors.subtext} />
+          <Text style={[s.searchPlaceholder, { color: colors.subtext }]}>
+            Search screens, issues, mechanics…
+          </Text>
         </TouchableOpacity>
-
-        <UserAvatar size={32} onPress={() => router.push("/(tabs)/profile")} />
       </View>
-    </View>
+
+      {/* Search modal */}
+      <SearchModal visible={searchOpen} onClose={() => setSearchOpen(false)} />
+    </>
   )
 }
 
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingBottom: 10,
+    paddingHorizontal: Spacing.base,
+    paddingBottom: Spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    // subtle shadow
     elevation: 4,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.07,
     shadowRadius: 4,
+  },
+
+  /* Row 1 */
+  row1: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: Spacing.md,
   },
   left: {
     flexDirection: "row",
@@ -113,54 +123,54 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   appName: {
-    fontSize: 15,
-    fontFamily: "Poppins-Bold",
+    fontSize: FontSize.md,
+    fontFamily: FontFamily.bold,
     letterSpacing: 0.1,
   },
   right: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    flexShrink: 1,
-  },
-  greeting: {
-    fontSize: 11,
-    fontFamily: "Poppins-Regular",
-    maxWidth: 105,
   },
   bellBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: "center",
     justifyContent: "center",
   },
+
+  /* Row 2 — search bar */
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    height: 40,
+    borderRadius: Radius.lg,
+  },
+  searchPlaceholder: {
+    fontSize: FontSize.sm,
+    fontFamily: FontFamily.regular,
+  },
 })
 
-// ─── Tab Layout ─────────────────────────────────────────────────────────────
+// ─── Tab layout ──────────────────────────────────────────────────────────────
 export default function TabLayout() {
   const { colors, isDark } = useTheme()
   const insets             = useSafeAreaInsets()
 
-  // Bottom padding for tab bar = device safe-area bottom + a small inner gap
-  const tabBarPaddingBottom = insets.bottom + 6
-
   return (
     <Tabs
       screenOptions={{
-        // Our custom full-width header replaces Expo's default
         header: () => <AppHeader />,
-
         tabBarActiveTintColor:   colors.primary,
         tabBarInactiveTintColor: colors.tabIconDefault,
-
         tabBarStyle: {
           backgroundColor: isDark ? colors.card : "#ffffff",
           borderTopColor:  colors.border,
           borderTopWidth:  StyleSheet.hairlineWidth,
-          // height accounts for the icon + label + bottom safe area
           height: 54 + insets.bottom,
-          paddingBottom: tabBarPaddingBottom,
+          paddingBottom: insets.bottom + 6,
           paddingTop: 6,
           elevation: 8,
           shadowColor: "#000",
@@ -168,9 +178,8 @@ export default function TabLayout() {
           shadowOpacity: 0.06,
           shadowRadius: 6,
         },
-
         tabBarLabelStyle: {
-          fontFamily: "Poppins-Medium",
+          fontFamily: FontFamily.medium,
           fontSize: 10,
           marginTop: -2,
         },
