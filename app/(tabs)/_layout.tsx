@@ -23,6 +23,7 @@ import UserAvatar from "@/components/UserAvatar"
 import SearchModal from "@/components/SearchModal"
 import React, { useState } from "react"
 import { FontSize, FontFamily, Spacing, Radius } from "@/constants/Theme"
+import CustomTabBar from "@/components/CustomTabBar"
 
 // ─── Shared header row (logo + bell + avatar) ─────────────────────────────
 function HeaderTop() {
@@ -162,36 +163,10 @@ export default function TabLayout() {
 
   return (
     <Tabs
+      tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{
         // Default header for all tabs (overridden per-screen below)
         header: () => <AppHeader />,
-        tabBarActiveTintColor:   colors.primary, // Back to Navy/Gold since background is now faint
-        tabBarActiveBackgroundColor: isDark ? colors.primary + "20" : colors.primary + "15",
-        tabBarItemStyle: {
-          borderRadius: 60, // Completely rounded pill shape
-          marginHorizontal: 12, // Ensure space between buttons
-          marginVertical: 8, 
-          paddingTop: 8,
-          paddingBottom: 4, 
-          justifyContent: "center",
-          alignItems: "center",
-          height: 60, // Fixed height
-          flex: 1, // Force every button to flex and consume the exactly same identical horizontal width
-        },
-        tabBarStyle: {
-          backgroundColor: isDark ? colors.card : "#ffffff",
-          borderTopColor: isDark ? colors.border : "#e2e8f0",
-          borderTopWidth: StyleSheet.hairlineWidth,
-          height: 76 + insets.bottom, // Give the whole bar enough height to fit the 60px item + 16px vertical margins
-          paddingBottom: insets.bottom, 
-          elevation: 0,
-          shadowOpacity: 0,
-        },
-        tabBarLabelStyle: {
-          fontFamily: FontFamily.medium,
-          fontSize: 10,
-          paddingBottom: 4, // Final nudge upward inside the 60px item box
-        },
       }}
     >
       {/* Home tab — two-row header WITH search bar */}
