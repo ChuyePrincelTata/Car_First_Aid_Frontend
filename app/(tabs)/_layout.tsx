@@ -1,95 +1,86 @@
 /**
  * (tabs)/_layout.tsx
  *
- * Tab navigator layout with a custom, branded header.
+ * Tab navigator with a custom branded header.
  *
- * Header design:
- * ┌─────────────────────────────────────────────────────┐
- * │  [Logo] Car First Aid    [greeting]  [Bell] [Avatar]  │
- * └─────────────────────────────────────────────────────┘
+ * Safe area handling:
+ *  - Header uses useSafeAreaInsets().top so it sits correctly below the
+ *    status bar on ALL devices (notched iPhones, tall Android status bars, etc.)
+ *  - Tab bar uses useSafeAreaInsets().bottom so it never overlaps the
+ *    device home indicator / Android nav buttons
  *
- * Left side  — app logo + name (always visible, feels like a branded app bar)
- * Right side — greeting label + notification bell + tappable user avatar
- * No screen title in the centre — users get context from the bottom tab bar.
- *
- * UX extras added:
- * - Time-based greeting ("Good morning / afternoon / evening, <name>")
- *   shown in a subtle chip so users feel personally welcomed on every screen.
- * - Avatar navigates to Profile tab when tapped.
- * - Bell navigates to Notifications.
+ * Header layout:
+ * ┌──────────────────────────────────────────────────────────┐
+ * │  [Logo] Car First Aid        Good morning, John 👋 🔔 🟡│
+ * └──────────────────────────────────────────────────────────┘
  */
 
 import { Image, View, Text, StyleSheet, TouchableOpacity, Platform } from "react-native"
 import { Tabs, useRouter } from "expo-router"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Camera, Home, User, History, MessageSquare, Bell } from "@/components/SafeLucide"
 import { useTheme } from "@/context/ThemeContext"
 import { useAuth } from "@/context/AuthContext"
 import UserAvatar from "@/components/UserAvatar"
 import React, { useMemo } from "react"
 
-// ─── Time-based greeting helper ────────────────────────────────────────────
+// ─── Time-based greeting ────────────────────────────────────────────────────
 function getGreeting(): string {
-  const hour = new Date().getHours()
-  if (hour < 12) return "Good morning"
-  if (hour < 17) return "Good afternoon"
+  const h = new Date().getHours()
+  if (h < 12) return "Good morning"
+  if (h < 17) return "Good afternoon"
   return "Good evening"
 }
 
-// ─── Custom header — used by every tab screen ──────────────────────────────
+// ─── Custom header component ────────────────────────────────────────────────
 function AppHeader() {
-  const { colors, theme } = useTheme()
-  const { user } = useAuth()
-  const router = useRouter()
-  const greeting = useMemo(() => `${getGreeting()}, ${user?.name?.split(" ")[0] ?? "there"} 👋`, [user])
+  const { colors, isDark } = useTheme()
+  const { user }           = useAuth()
+  const router             = useRouter()
+  const insets             = useSafeAreaInsets()
 
-  const isDark = theme === "dark"
+  const greeting = useMemo(
+    () => `${getGreeting()}, ${user?.name?.split(" ")[0] ?? "there"} 👋`,
+    [user],
+  )
 
   return (
     <View
       style={[
         styles.header,
         {
+          // paddingTop = safe-area top inset + our own inner padding
+          paddingTop: insets.top + 10,
           backgroundColor: isDark ? colors.card : "#ffffff",
           borderBottomColor: colors.border,
         },
       ]}
     >
       {/* LEFT — logo + app name */}
-      <View style={styles.headerLeft}>
+      <View style={styles.left}>
         <Image
           source={require("../../assets/images/logo.jpg")}
           style={styles.logo}
           resizeMode="cover"
         />
-        <View>
-          <Text style={[styles.appName, { color: colors.primary }]}>Car First Aid</Text>
-        </View>
+        <Text style={[styles.appName, { color: colors.primary }]}>Car First Aid</Text>
       </View>
 
       {/* RIGHT — greeting + bell + avatar */}
-      <View style={styles.headerRight}>
-        {/* Subtle greeting chip */}
-        <Text
-          style={[styles.greeting, { color: colors.subtext }]}
-          numberOfLines={1}
-        >
+      <View style={styles.right}>
+        <Text style={[styles.greeting, { color: colors.subtext }]} numberOfLines={1}>
           {greeting}
         </Text>
 
-        {/* Notification bell */}
         <TouchableOpacity
-          style={[styles.iconBtn, { backgroundColor: colors.primaryLight ?? colors.border }]}
+          style={[styles.bellBtn, { backgroundColor: isDark ? colors.background : colors.border }]}
           onPress={() => router.push("/notifications")}
-          activeOpacity={0.7}
+          activeOpacity={0.75}
         >
-          <Bell size={18} color={colors.primary} />
+          <Bell size={17} color={colors.primary} />
         </TouchableOpacity>
 
-        {/* User avatar → profile */}
-        <UserAvatar
-          size={34}
-          onPress={() => router.push("/(tabs)/profile")}
-        />
+        <UserAvatar size={32} onPress={() => router.push("/(tabs)/profile")} />
       </View>
     </View>
   )
@@ -101,84 +92,87 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingTop: Platform.OS === "ios" ? 52 : 14,
     paddingBottom: 10,
-    borderBottomWidth: 1,
-    elevation: 3,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    // subtle shadow
+    elevation: 4,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
     shadowRadius: 4,
   },
-  headerLeft: {
+  left: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 8,
     flex: 1,
   },
   logo: {
-    width: 34,
-    height: 34,
+    width: 32,
+    height: 32,
     borderRadius: 8,
   },
   appName: {
     fontSize: 15,
     fontFamily: "Poppins-Bold",
-    letterSpacing: 0.2,
+    letterSpacing: 0.1,
   },
-  headerRight: {
+  right: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 8,
     flexShrink: 1,
   },
   greeting: {
     fontSize: 11,
     fontFamily: "Poppins-Regular",
-    maxWidth: 110,
+    maxWidth: 105,
   },
-  iconBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+  bellBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
   },
 })
 
-// ─── Tab Layout ────────────────────────────────────────────────────────────
+// ─── Tab Layout ─────────────────────────────────────────────────────────────
 export default function TabLayout() {
-  const { colors, theme } = useTheme()
-  const { user } = useAuth()
-  const isDark = theme === "dark"
+  const { colors, isDark } = useTheme()
+  const insets             = useSafeAreaInsets()
+
+  // Bottom padding for tab bar = device safe-area bottom + a small inner gap
+  const tabBarPaddingBottom = insets.bottom + 6
 
   return (
     <Tabs
       screenOptions={{
-        // Replace the default header with our custom AppHeader
+        // Our custom full-width header replaces Expo's default
         header: () => <AppHeader />,
 
-        tabBarActiveTintColor: colors.primary,
+        tabBarActiveTintColor:   colors.primary,
         tabBarInactiveTintColor: colors.tabIconDefault,
 
         tabBarStyle: {
           backgroundColor: isDark ? colors.card : "#ffffff",
-          borderTopColor: colors.border,
-          height: 64,
-          paddingBottom: 10,
-          paddingTop: 8,
+          borderTopColor:  colors.border,
+          borderTopWidth:  StyleSheet.hairlineWidth,
+          // height accounts for the icon + label + bottom safe area
+          height: 54 + insets.bottom,
+          paddingBottom: tabBarPaddingBottom,
+          paddingTop: 6,
           elevation: 8,
           shadowColor: "#000",
           shadowOffset: { width: 0, height: -2 },
           shadowOpacity: 0.06,
-          shadowRadius: 8,
+          shadowRadius: 6,
         },
+
         tabBarLabelStyle: {
           fontFamily: "Poppins-Medium",
-          fontSize: 11,
-        },
-        tabBarItemStyle: {
-          paddingVertical: 2,
+          fontSize: 10,
+          marginTop: -2,
         },
       }}
     >

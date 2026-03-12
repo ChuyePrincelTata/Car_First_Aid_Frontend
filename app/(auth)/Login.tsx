@@ -18,6 +18,7 @@ import {
   Platform, StatusBar, ActivityIndicator,
 } from "react-native"
 import { useRouter } from "expo-router"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Lock, Mail, Eye, EyeOff } from "@/components/SafeLucide"
 import { useAuth } from "@/context/AuthContext"
 import { useTheme } from "@/context/ThemeContext"
@@ -36,6 +37,7 @@ export default function LoginScreen() {
   const { colors, isDark }    = useTheme()
 
   const passwordRef = useRef<TextInput>(null)
+  const insets       = useSafeAreaInsets()
 
   const handleLogin = async () => {
     if (!email.trim() || !password) {
@@ -72,7 +74,7 @@ export default function LoginScreen() {
     /* ── branding block ── */
     brandBlock: {
       alignItems: "center",
-      paddingTop: Platform.OS === "ios" ? 70 : 50,
+      paddingTop: insets.top + Spacing.xl,
       paddingBottom: Spacing.xxl,
     },
     logoWrapper: {

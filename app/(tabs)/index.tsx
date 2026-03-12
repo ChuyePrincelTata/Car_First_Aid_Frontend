@@ -1,9 +1,8 @@
-"use client"
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, ImageBackground } from "react-native"
 import { useTheme } from "@/context/ThemeContext"
 import { useAuth } from "@/context/AuthContext"
-import { Camera, Mic, MessageSquare, AlertTriangle } from "lucide-react-native"
-import { LinearGradient } from "expo-linear-gradient"
+import { Camera, Mic, MessageSquare, AlertTriangle } from "@/components/SafeLucide"
+import LinearGradient from "@/components/LinearGradient"
 import { useRouter } from "expo-router"
 import React from "react"
 
@@ -18,9 +17,9 @@ export default function HomeScreen() {
       backgroundColor: colors.background,
     },
     header: {
-      paddingTop: 60,
+      paddingTop: 16,
       paddingHorizontal: 24,
-      paddingBottom: 24,
+      paddingBottom: 16,
     },
     greeting: {
       fontSize: 16,

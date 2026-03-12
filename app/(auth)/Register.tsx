@@ -18,6 +18,7 @@ import {
   Platform, StatusBar, ActivityIndicator,
 } from "react-native"
 import { useRouter } from "expo-router"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Eye, EyeOff, CheckCircle, AlertCircle, User, Wrench } from "@/components/SafeLucide"
 import { useAuth } from "@/context/AuthContext"
 import { useTheme } from "@/context/ThemeContext"
@@ -51,6 +52,7 @@ export default function RegisterScreen() {
   const router      = useRouter()
   const emailRef    = useRef<TextInput>(null)
   const passRef     = useRef<TextInput>(null)
+  const insets      = useSafeAreaInsets()
 
   const ruleResults    = useMemo(() => PASSWORD_RULES.map(r => r.test(password)), [password])
   const allRulesPassed = ruleResults.every(Boolean)
@@ -108,7 +110,7 @@ export default function RegisterScreen() {
 
     brandBlock: {
       alignItems: "center",
-      paddingTop: Platform.OS === "ios" ? 60 : 40,
+      paddingTop: insets.top + Spacing.lg,
       paddingBottom: Spacing.xl,
     },
     logoWrapper: {
