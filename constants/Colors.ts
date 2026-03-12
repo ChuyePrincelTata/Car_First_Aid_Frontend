@@ -92,7 +92,7 @@ const Colors = {
     // Aliases
     secondary: "#131B2B",
   },
-} as const
+}
 
 export default Colors
 export type ColorScheme = typeof Colors.light
