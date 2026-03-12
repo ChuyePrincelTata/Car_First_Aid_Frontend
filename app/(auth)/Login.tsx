@@ -1,198 +1,305 @@
+/**
+ * Login.tsx
+ *
+ * Full-screen login with:
+ *  - No OS navigation header (handled by auth layout)
+ *  - App logo + name + tagline at the top
+ *  - Themed inputs (border highlights on focus)
+ *  - Password visibility toggle
+ *  - Primary-coloured submit button whose TEXT uses `colors.buttonText`
+ *    so it is readable on BOTH the yellow (dark mode) and blue (light mode) gradient
+ *  - Works correctly in light AND dark mode without any hardcoded colours
+ */
 
-import { useState } from "react"
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Image, ScrollView, Alert } from "react-native"
+import { useState, useRef } from "react"
+import {
+  View, Text, TextInput, TouchableOpacity, Image,
+  StyleSheet, Alert, ScrollView, KeyboardAvoidingView,
+  Platform, StatusBar, ActivityIndicator,
+} from "react-native"
 import { useRouter } from "expo-router"
 import { Lock, Mail, Eye, EyeOff } from "@/components/SafeLucide"
-import LinearGradient from "@/components/LinearGradient"
 import { useAuth } from "@/context/AuthContext"
 import { useTheme } from "@/context/ThemeContext"
+import { Spacing, Radius, FontSize, FontFamily, Shadows } from "@/constants/Theme"
 import React from "react"
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const [email, setEmail]               = useState("")
+  const [password, setPassword]         = useState("")
   const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState("")
-  const router = useRouter()
+  const [emailFocused, setEmailFocused] = useState(false)
+  const [passFocused, setPassFocused]   = useState(false)
+
+  const router          = useRouter()
   const { signIn, isLoading } = useAuth()
-  const { colors } = useTheme()
+  const { colors, isDark }    = useTheme()
+
+  const passwordRef = useRef<TextInput>(null)
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      setError("Please fill in all fields")
+    if (!email.trim() || !password) {
+      Alert.alert("Missing fields", "Please enter your email and password.")
       return
     }
-
     try {
-      setError("")
-      await signIn(email, password)
+      await signIn(email.trim().toLowerCase(), password)
       router.replace("/(tabs)")
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "An error occurred during login"
-      Alert.alert("Login Failed", errorMessage)
+      const msg = error instanceof Error ? error.message : "Login failed. Please try again."
+      Alert.alert("Login Failed", msg)
     }
   }
 
-  const styles = StyleSheet.create({
-    container: {
+  /* ── helpers ─────────────────────────────────────────────────────────── */
+  const inputBorder = (focused: boolean) => ({
+    borderColor: focused ? colors.primary : colors.border,
+    borderWidth: focused ? 1.5 : 1,
+  })
+
+  /* ── styles ──────────────────────────────────────────────────────────── */
+  const s = StyleSheet.create({
+    screen: { flex: 1, backgroundColor: colors.background },
+
+    scroll: { flexGrow: 1 },
+
+    inner: {
       flex: 1,
-      backgroundColor: colors.background,
+      paddingHorizontal: Spacing.xl,
+      paddingBottom: Spacing.xxxl,
     },
-    scrollContent: {
-      flexGrow: 1,
-      justifyContent: "center",
-    },
-    logoContainer: {
+
+    /* ── branding block ── */
+    brandBlock: {
       alignItems: "center",
-      marginBottom: 30,
+      paddingTop: Platform.OS === "ios" ? 70 : 50,
+      paddingBottom: Spacing.xxl,
     },
-    logo: {
-      width: 120,
-      height: 120,
-      marginBottom: 10,
-      borderRadius: 60,
+    logoWrapper: {
+      width: 90,
+      height: 90,
+      borderRadius: Radius.xl,
+      overflow: "hidden",
+      marginBottom: Spacing.md,
+      ...Shadows.md,
     },
-    title: {
-      fontSize: 28,
-      fontFamily: "Poppins-Bold",
+    logo: { width: "100%", height: "100%" },
+    appName: {
+      fontSize: FontSize.xxl,
+      fontFamily: FontFamily.bold,
       color: colors.primary,
-      marginBottom: 8,
+      letterSpacing: -0.5,
+      marginBottom: 4,
     },
-    subtitle: {
-      fontSize: 18,
-      fontFamily: "Poppins-Regular",
-      color: colors.text,
+    tagline: {
+      fontSize: FontSize.sm,
+      fontFamily: FontFamily.regular,
+      color: colors.subtext,
       textAlign: "center",
-      marginBottom: 30,
-      paddingHorizontal: 20,
     },
-    form: {
-      paddingHorizontal: 24,
+
+    /* ── form section ── */
+    formSection: {
+      backgroundColor: colors.card,
+      borderRadius: Radius.xl,
+      padding: Spacing.xl,
+      ...Shadows.sm,
     },
-    inputContainer: {
+    sectionTitle: {
+      fontSize: FontSize.xl,
+      fontFamily: FontFamily.bold,
+      color: colors.text,
+      marginBottom: Spacing.lg,
+    },
+
+    /* ── input row ── */
+    inputRow: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: colors.card,
-      borderRadius: 12,
-      paddingHorizontal: 16,
-      marginBottom: 16,
-      height: 56,
-      borderWidth: 1,
-      borderColor: colors.border,
+      borderRadius: Radius.lg,
+      backgroundColor: isDark ? colors.background : colors.background,
+      marginBottom: Spacing.md,
+      paddingHorizontal: Spacing.md,
+      height: 54,
     },
-    inputIcon: {
-      marginRight: 12,
-    },
+    inputIcon: { marginRight: Spacing.sm },
     input: {
       flex: 1,
+      fontSize: FontSize.base,
+      fontFamily: FontFamily.regular,
       color: colors.text,
-      fontFamily: "Poppins-Regular",
     },
-    errorText: {
-      color: colors.error,
-      marginBottom: 16,
-      fontFamily: "Poppins-Regular",
-      textAlign: "center",
+    eyeBtn: { padding: Spacing.xs },
+
+    /* ── forgot ── */
+    forgotRow: { alignItems: "flex-end", marginBottom: Spacing.lg, marginTop: -4 },
+    forgotText: {
+      fontSize: FontSize.sm,
+      fontFamily: FontFamily.medium,
+      color: colors.primary,
     },
-    buttonContainer: {
-      marginTop: 10,
-      overflow: "hidden",
-      borderRadius: 12,
-    },
-    button: {
-      height: 56,
-      justifyContent: "center",
+
+    /* ── primary button ── */
+    btn: {
+      height: 54,
+      borderRadius: Radius.lg,
+      backgroundColor: colors.primary,
       alignItems: "center",
+      justifyContent: "center",
+      marginTop: Spacing.xs,
+      ...Shadows.md,
     },
-    buttonText: {
-      color: colors.secondary,
-      fontSize: 16,
-      fontFamily: "Poppins-Bold",
+    btnText: {
+      fontSize: FontSize.base,
+      fontFamily: FontFamily.bold,
+      // buttonText ensures readable contrast on primary-coloured button
+      color: colors.buttonText,
+      letterSpacing: 0.3,
     },
-    signupContainer: {
+
+    /* ── divider ── */
+    dividerRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginVertical: Spacing.lg,
+    },
+    dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
+    dividerText: {
+      marginHorizontal: Spacing.sm,
+      fontSize: FontSize.sm,
+      fontFamily: FontFamily.regular,
+      color: colors.subtext,
+    },
+
+    /* ── register link ── */
+    registerRow: {
       flexDirection: "row",
       justifyContent: "center",
-      marginTop: 24,
+      marginTop: Spacing.lg,
     },
-    signupText: {
-      color: colors.text,
-      fontFamily: "Poppins-Regular",
+    registerText: {
+      fontSize: FontSize.md,
+      fontFamily: FontFamily.regular,
+      color: colors.subtext,
     },
-    signupLink: {
+    registerLink: {
+      fontSize: FontSize.md,
+      fontFamily: FontFamily.bold,
       color: colors.primary,
-      fontFamily: "Poppins-Medium",
       marginLeft: 4,
     },
   })
 
   return (
-    <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.logoContainer}>
-          <Image source={require("../../assets/images/logo.jpg")} style={styles.logo} resizeMode="contain" />
-          <Text style={styles.title}>Car First Aid</Text>
-          <Text style={styles.subtitle}>Sign in to diagnose your car issues with AI</Text>
-        </View>
+    <KeyboardAvoidingView
+      style={s.screen}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={colors.background}
+      />
+      <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
+        <View style={s.inner}>
 
-        <View style={styles.form}>
-          <View style={styles.inputContainer}>
-            <Mail size={20} color={colors.primary} style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              placeholderTextColor={colors.tabIconDefault}
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
+          {/* ── Branding ── */}
+          <View style={s.brandBlock}>
+            <View style={s.logoWrapper}>
+              <Image
+                source={require("../../assets/images/logo.jpg")}
+                style={s.logo}
+                resizeMode="cover"
+              />
+            </View>
+            <Text style={s.appName}>Car First Aid</Text>
+            <Text style={s.tagline}>AI-powered car diagnostics in your pocket</Text>
           </View>
 
-          <View style={styles.inputContainer}>
-            <Lock size={20} color={colors.primary} style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              placeholderTextColor={colors.tabIconDefault}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-            />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={{ padding: 4 }}>
-              {showPassword
-                ? <EyeOff size={20} color={colors.tabIconDefault} />
-                : <Eye size={20} color={colors.tabIconDefault} />
+          {/* ── Form card ── */}
+          <View style={s.formSection}>
+            <Text style={s.sectionTitle}>Sign in</Text>
+
+            {/* Email */}
+            <View style={[s.inputRow, inputBorder(emailFocused)]}>
+              <Mail size={18} color={emailFocused ? colors.primary : colors.subtext} style={s.inputIcon} />
+              <TextInput
+                style={s.input}
+                placeholder="Email address"
+                placeholderTextColor={colors.subtext}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="next"
+                onSubmitEditing={() => passwordRef.current?.focus()}
+                onFocus={() => setEmailFocused(true)}
+                onBlur={() => setEmailFocused(false)}
+              />
+            </View>
+
+            {/* Password */}
+            <View style={[s.inputRow, inputBorder(passFocused)]}>
+              <Lock size={18} color={passFocused ? colors.primary : colors.subtext} style={s.inputIcon} />
+              <TextInput
+                ref={passwordRef}
+                style={s.input}
+                placeholder="Password"
+                placeholderTextColor={colors.subtext}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                returnKeyType="done"
+                onSubmitEditing={handleLogin}
+                onFocus={() => setPassFocused(true)}
+                onBlur={() => setPassFocused(false)}
+              />
+              <TouchableOpacity style={s.eyeBtn} onPress={() => setShowPassword(v => !v)}>
+                {showPassword
+                  ? <EyeOff size={18} color={colors.subtext} />
+                  : <Eye    size={18} color={colors.subtext} />
+                }
+              </TouchableOpacity>
+            </View>
+
+            {/* Forgot password */}
+            <View style={s.forgotRow}>
+              <TouchableOpacity>
+                <Text style={s.forgotText}>Forgot password?</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Submit button */}
+            <TouchableOpacity
+              style={[s.btn, isLoading && { opacity: 0.7 }]}
+              onPress={handleLogin}
+              disabled={isLoading}
+              activeOpacity={0.85}
+            >
+              {isLoading
+                ? <ActivityIndicator color={colors.buttonText} />
+                : <Text style={s.btnText}>Sign In</Text>
               }
             </TouchableOpacity>
           </View>
 
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-          <View style={styles.buttonContainer}>
-            <LinearGradient
-              colors={["#FFD700", "#FFC000"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.button}
-            >
-              <TouchableOpacity
-                onPress={handleLogin}
-                disabled={isLoading}
-                style={{ width: "100%", height: "100%", justifyContent: "center", alignItems: "center" }}
-              >
-                <Text style={styles.buttonText}>{isLoading ? "Signing In..." : "Sign In"}</Text>
-              </TouchableOpacity>
-            </LinearGradient>
+          {/* ── Divider ── */}
+          <View style={s.dividerRow}>
+            <View style={s.dividerLine} />
+            <Text style={s.dividerText}>or</Text>
+            <View style={s.dividerLine} />
           </View>
 
-          <View style={styles.signupContainer}>
-            <Text style={styles.signupText}>Don't have an account?</Text>
+          {/* ── Register link ── */}
+          <View style={s.registerRow}>
+            <Text style={s.registerText}>Don't have an account?</Text>
             <TouchableOpacity onPress={() => router.push("/(auth)/Register")}>
-              <Text style={styles.signupLink}>Sign Up</Text>
+              <Text style={s.registerLink}>Create one</Text>
             </TouchableOpacity>
           </View>
+
         </View>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   )
 }
