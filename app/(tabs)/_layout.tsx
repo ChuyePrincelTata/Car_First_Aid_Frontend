@@ -170,24 +170,25 @@ export default function TabLayout() {
         tabBarActiveBackgroundColor: isDark ? colors.primary + "20" : colors.primary + "15", // Faint background (WhatsApp style)
         tabBarItemStyle: {
           borderRadius: 16,
-          marginHorizontal: 10,
-          paddingTop: 8, // 8px space above icon inside pill
-          paddingBottom: 8, // 8px space below text inside pill
+          marginHorizontal: 4, // Reduced so "Mechanics" fits without truncating
+          paddingTop: 10, // 10px below top of pill background
+          paddingBottom: 10, // 10px above bottom of pill background
         },
         tabBarStyle: {
           backgroundColor: isDark ? colors.card : "#ffffff",
           borderTopColor: isDark ? colors.border : "#e2e8f0",
           borderTopWidth: StyleSheet.hairlineWidth,
-          minHeight: 65 + insets.bottom, // Use minHeight instead of exact height to prevent squishing
-          paddingBottom: insets.bottom + 8, // 8px space completely outside the pill at bottom
-          paddingTop: 8, // 8px space completely outside the pill at top
+          height: 72 + insets.bottom, // Explicitly tall enough to contain the full pill height
+          paddingBottom: insets.bottom + 8, // 8px below the outer pill
+          paddingTop: 8, // 8px above the outer pill
           elevation: 0,
           shadowOpacity: 0,
         },
         tabBarLabelStyle: {
           fontFamily: FontFamily.medium,
           fontSize: 10,
-          marginTop: 4, // Space between icon and text inside the pill
+          marginTop: 2, // Space strictly between icon and text inside the pill
+          marginBottom: 0,
         },
       }}
     >
