@@ -165,13 +165,13 @@ export default function TabLayout() {
       screenOptions={{
         // Default header for all tabs (overridden per-screen below)
         header: () => <AppHeader />,
-        tabBarActiveTintColor:   colors.buttonText, // Use button text color since background is primary
+        tabBarActiveTintColor:   colors.primary, // Back to Navy/Gold since background is now faint
         tabBarInactiveTintColor: colors.tabIconDefault,
-        tabBarActiveBackgroundColor: colors.primary,
+        tabBarActiveBackgroundColor: isDark ? colors.primary + "20" : colors.primary + "15", // Faint background (WhatsApp style)
         tabBarItemStyle: {
-          borderRadius: 20,
-          marginHorizontal: 8,
-          marginVertical: 4,
+          borderRadius: 16, // Softer pill
+          marginHorizontal: 12, // More breathing room between buttons
+          marginVertical: 6,
           paddingVertical: 4,
         },
         tabBarStyle: {
