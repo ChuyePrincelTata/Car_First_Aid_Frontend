@@ -168,14 +168,15 @@ export default function TabLayout() {
         tabBarActiveTintColor:   colors.primary, // Back to Navy/Gold since background is now faint
         tabBarActiveBackgroundColor: isDark ? colors.primary + "20" : colors.primary + "15",
         tabBarItemStyle: {
-          borderRadius: 20, // Better rounded pill shape
-          marginHorizontal: 12, // Gap between tabs
-          marginVertical: 8, // Margins pulling it away from edges
-          paddingTop: 8, // Force padding inside pill above icon
-          paddingBottom: 4, // Force padding inside pill below text (less since text naturally rests lower in React Nav)
+          borderRadius: 60, // Completely rounded pill shape (larger than height ensures perfect rounding)
+          marginHorizontal: 0, 
+          marginVertical: 8, 
+          paddingTop: 8,
+          paddingBottom: 4, 
           justifyContent: "center",
           alignItems: "center",
-          height: 60, // Fixed height specifically for the item itself
+          height: 60, // Fixed height for every button
+          width: 70, // Fixed width for every button so they are all exactly the same size
         },
         tabBarStyle: {
           backgroundColor: isDark ? colors.card : "#ffffff",
