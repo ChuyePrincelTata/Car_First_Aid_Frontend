@@ -170,24 +170,25 @@ export default function TabLayout() {
         tabBarActiveBackgroundColor: isDark ? colors.primary + "20" : colors.primary + "15", // Faint background (WhatsApp style)
         tabBarItemStyle: {
           borderRadius: 16, // Softer pill
-          marginHorizontal: 12, // More breathing room between buttons
-          marginVertical: 6,
+          marginHorizontal: 8,
+          marginVertical: 4,
           paddingVertical: 4,
+          height: 52, // Fix height to prevent cutting off the background
         },
         tabBarStyle: {
           backgroundColor: isDark ? colors.card : "#ffffff",
           borderTopColor: isDark ? colors.border : "#e2e8f0",
           borderTopWidth: StyleSheet.hairlineWidth,
           height: 60 + insets.bottom,
-          paddingBottom: insets.bottom + 8,
-          paddingTop: 8,
+          paddingBottom: insets.bottom + 4, // Adjusted bottom padding to let the pill sit nicely
+          paddingTop: 4,
           elevation: 0, // Flat design, no heavy shadow
           shadowOpacity: 0, // No shadow in WhatsApp style
         },
         tabBarLabelStyle: {
           fontFamily: FontFamily.medium,
           fontSize: 10,
-          marginTop: -2,
+          marginBottom: 2, // Push text slightly up from bottom of the pill
         },
       }}
     >
