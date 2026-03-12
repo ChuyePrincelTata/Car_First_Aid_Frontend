@@ -2,9 +2,8 @@ import { useState } from "react"
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, ImageBackground } from "react-native"
 import { useTheme } from "@/context/ThemeContext"
 import { useAuth } from "@/context/AuthContext"
-import { Camera, Mic, MessageSquare, AlertTriangle, Search } from "@/components/SafeLucide"
+import { Camera, Mic, MessageSquare, AlertTriangle } from "@/components/SafeLucide"
 import LinearGradient from "@/components/LinearGradient"
-import SearchModal from "@/components/SearchModal"
 import { useRouter } from "expo-router"
 import React from "react"
 
@@ -12,7 +11,6 @@ export default function HomeScreen() {
   const { colors, isDark } = useTheme()
   const { user } = useAuth()
   const router = useRouter()
-  const [searchOpen, setSearchOpen] = useState(false)
 
   const styles = StyleSheet.create({
     container: {
@@ -23,23 +21,6 @@ export default function HomeScreen() {
       paddingTop: 16,
       paddingHorizontal: 24,
       paddingBottom: 8,
-    },
-    searchBar: {
-      flexDirection: "row" as const,
-      alignItems: "center" as const,
-      gap: 10,
-      backgroundColor: isDark ? colors.card : "#f1f5f9",
-      borderRadius: 12,
-      paddingHorizontal: 14,
-      height: 44,
-      marginHorizontal: 24,
-      marginBottom: 16,
-    },
-    searchPlaceholder: {
-      fontSize: 14,
-      fontFamily: "Poppins-Regular",
-      color: colors.subtext,
-      flex: 1,
     },
     greeting: {
       fontSize: 16,
@@ -225,18 +206,6 @@ export default function HomeScreen() {
           <Text style={styles.greeting}>Good to see you,</Text>
           <Text style={styles.userName}>{user?.name || "Guest"}</Text>
         </View>
-
-        {/* Search bar — single source of app-wide search on Home */}
-        <TouchableOpacity
-          style={styles.searchBar}
-          onPress={() => setSearchOpen(true)}
-          activeOpacity={0.7}
-        >
-          <Search size={16} color={colors.subtext} />
-          <Text style={styles.searchPlaceholder}>Search screens, issues, mechanics…</Text>
-        </TouchableOpacity>
-
-        <SearchModal visible={searchOpen} onClose={() => setSearchOpen(false)} />
 
         <View style={styles.banner}>
           <ImageBackground
