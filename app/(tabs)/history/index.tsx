@@ -1,63 +1,12 @@
-"use client"
+
 
 import { useState } from "react"
 import { StyleSheet, Text, View, FlatList, TouchableOpacity } from "react-native"
 import { useTheme } from "@/context/ThemeContext"
-import { AlertCircle, Camera, Mic, Calendar, ChevronRight, History as HistoryIcon } from "lucide-react-native"
+import { AlertCircle, Camera, Mic, Calendar, ChevronRight, History as HistoryIcon } from "@/components/SafeLucide"
 import { useRouter } from "expo-router"
 import React from "react"
-
-type DiagnosisHistory = {
-  id: string
-  type: "image" | "sound" | "manual"
-  issue: string
-  date: string
-  severity: "Low" | "Medium" | "High"
-  resolved: boolean
-}
-
-const mockHistory: DiagnosisHistory[] = [
-  {
-    id: "1",
-    type: "image",
-    issue: "Check Engine Light",
-    date: "2025-05-10",
-    severity: "Medium",
-    resolved: false,
-  },
-  {
-    id: "2",
-    type: "sound",
-    issue: "Engine Knocking",
-    date: "2025-05-05",
-    severity: "High",
-    resolved: false,
-  },
-  {
-    id: "3",
-    type: "image",
-    issue: "Low Tire Pressure",
-    date: "2025-04-28",
-    severity: "Low",
-    resolved: true,
-  },
-  {
-    id: "4",
-    type: "manual",
-    issue: "Battery Warning",
-    date: "2025-04-20",
-    severity: "Medium",
-    resolved: true,
-  },
-  {
-    id: "5",
-    type: "sound",
-    issue: "Brake Squeaking",
-    date: "2025-04-15",
-    severity: "Low",
-    resolved: true,
-  },
-]
+import { DiagnosisHistory, mockHistory } from "@/data/mockData"
 
 export default function HistoryScreen() {
   const { colors } = useTheme()

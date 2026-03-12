@@ -6,70 +6,7 @@ import { useTheme } from "@/context/ThemeContext"
 import { Search, Star, MapPin, MessageSquare, CheckCircle } from "@/components/SafeLucide"
 import { useRouter } from "expo-router"
 import React from "react"
-
-type Mechanic = {
-  id: string
-  name: string
-  specialty: string
-  experience: string
-  rating: number
-  location: string
-  avatar: string
-  verified: boolean
-}
-
-const mockMechanics: Mechanic[] = [
-  {
-    id: "1",
-    name: "John Smith",
-    specialty: "Engine Specialist",
-    experience: "10 yrs exp",
-    rating: 4.8,
-    location: "Downtown Auto Shop",
-    avatar: "https://images.pexels.com/photos/8993561/pexels-photo-8993561.jpeg",
-    verified: true,
-  },
-  {
-    id: "2",
-    name: "Sarah Johnson",
-    specialty: "Electrical Systems",
-    experience: "8 yrs exp",
-    rating: 4.6,
-    location: "Westside Garage",
-    avatar: "https://images.pexels.com/photos/8993296/pexels-photo-8993296.jpeg",
-    verified: true,
-  },
-  {
-    id: "3",
-    name: "Mike Robinson",
-    specialty: "Transmission Expert",
-    experience: "12 yrs exp",
-    rating: 4.9,
-    location: "Premium Auto Repairs",
-    avatar: "https://images.pexels.com/photos/6692038/pexels-photo-6692038.jpeg",
-    verified: true,
-  },
-  {
-    id: "4",
-    name: "Emily Chen",
-    specialty: "Diagnostic Technician",
-    experience: "6 yrs exp",
-    rating: 4.5,
-    location: "Tech Auto Solutions",
-    avatar: "https://images.pexels.com/photos/8993541/pexels-photo-8993541.jpeg",
-    verified: true,
-  },
-  {
-    id: "5",
-    name: "David Wilson",
-    specialty: "Brake Systems",
-    experience: "9 yrs exp",
-    rating: 4.7,
-    location: "Eastside Auto Care",
-    avatar: "https://images.pexels.com/photos/8945288/pexels-photo-8945288.jpeg",
-    verified: true,
-  },
-]
+import { Mechanic, mockMechanics } from "@/data/mockData"
 
 export default function MechanicsScreen() {
   const { colors } = useTheme()

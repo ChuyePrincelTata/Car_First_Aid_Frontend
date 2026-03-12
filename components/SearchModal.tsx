@@ -28,6 +28,7 @@ import { useRouter } from "expo-router"
 import { useTheme } from "@/context/ThemeContext"
 import { Search, X, Camera, MessageSquare, History, User, Home, AlertCircle, Bell } from "@/components/SafeLucide"
 import { FontSize, FontFamily, Spacing, Radius, Shadows } from "@/constants/Theme"
+import { mockMechanics, mockHistory } from "@/data/mockData"
 
 // ─── Searchable items ────────────────────────────────────────────────────────
 
@@ -43,8 +44,8 @@ interface SearchItem {
   tags: string[] // extra keywords for better matching
 }
 
-// Defined outside component so it's only allocated once
-const SEARCH_CORPUS: SearchItem[] = [
+// Static screens and help topics
+const STATIC_CORPUS: SearchItem[] = [
   // Navigation
   {
     id: "home",
@@ -182,6 +183,29 @@ const SEARCH_CORPUS: SearchItem[] = [
     route: "/(tabs)/diagnose",
     tags: ["tyre", "tire", "flat", "pressure", "puncture", "wear", "alignment"],
   },
+]
+
+// Compute full corpus including dynamic/mock data
+const SEARCH_CORPUS: SearchItem[] = [
+  ...STATIC_CORPUS,
+  ...mockMechanics.map((m) => ({
+    id: `mechanic-${m.id}`,
+    title: m.name,
+    subtitle: `${m.specialty} • ${m.location}`,
+    category: "Navigate" as Category,
+    icon: null,
+    route: `/(tabs)/mechanics?id=${m.id}`,
+    tags: ["mechanic", m.specialty.toLowerCase(), m.location.toLowerCase()],
+  })),
+  ...mockHistory.map((h) => ({
+    id: `history-${h.id}`,
+    title: h.issue,
+    subtitle: `Diagnosed on ${h.date} • ${h.severity} Severity`,
+    category: "Navigate" as Category,
+    icon: null,
+    route: `/(tabs)/history?id=${h.id}`,
+    tags: ["history", "past", h.issue.toLowerCase(), h.type],
+  })),
 ]
 
 // ─── Fuzzy scoring ────────────────────────────────────────────────────────────
@@ -411,7 +435,11 @@ export default function SearchModal({ visible, onClose }: SearchModalProps) {
       case "notifications":return <Bell          size={size} color={color} />
       case "dashboardIcon":return <Camera        size={size} color={color} />
       case "enginePart": return <Camera        size={size} color={color} />
-      default:         return <Search        size={size} color={color} />
+      default:
+        // Prefixed dynamic item icons
+        if (id.startsWith("mechanic-")) return <MessageSquare size={size} color={color} />
+        if (id.startsWith("history-"))  return <History size={size} color={color} />
+        return <Search size={size} color={color} />
     }
   }
 
