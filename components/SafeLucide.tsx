@@ -17,6 +17,7 @@ const makeSafe = (Icon: any) => {
   }
 }
 
+export const Activity = makeSafe(Lucide.Activity)
 export const AlertCircle = makeSafe(Lucide.AlertCircle)
 export const AlertTriangle = makeSafe(Lucide.AlertTriangle)
 export const Bell = makeSafe(Lucide.Bell)
@@ -25,6 +26,7 @@ export const Camera = makeSafe(Lucide.Camera)
 export const CheckCircle = makeSafe(Lucide.CheckCircle)
 export const ChevronRight = makeSafe(Lucide.ChevronRight)
 export const ChevronLeft = makeSafe(Lucide.ChevronLeft)
+export const ClipboardList = makeSafe(Lucide.ClipboardList)
 export const FileText = makeSafe(Lucide.FileText)
 export const ExternalLink = makeSafe(Lucide.ExternalLink)
 export const Eye = makeSafe(Lucide.Eye)

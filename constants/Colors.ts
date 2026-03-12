@@ -20,14 +20,14 @@
  */
 
 const tintColorLight = "#1a237e"   // deep navy
-const tintColorDark  = "#FFD700"   // golden yellow
+const tintColorDark  = "#D4AF37"   // premium metallic gold
 
 const Colors = {
   light: {
     // Brand
     primary:     "#1a237e",  // deep navy blue
-    primaryLight:"#e8eaf6",  // very light tint of primary (input focus bg, etc.)
-    accent:      "#FFD700",  // golden yellow (used for gradient buttons)
+    primaryLight:"#e8eaf6",  // very light tint of primary
+    accent:      "#D4AF37",  // premium metallic gold
 
     // Surfaces
     background:  "#f4f7fb",  // soft off-white blue-tinted page bg
@@ -40,7 +40,7 @@ const Colors = {
     inverse:     "#ffffff",  // text on dark surfaces
 
     // Interactive
-    buttonText:  "#1a237e",  // text ON a yellow gradient button (must contrast yellow)
+    buttonText:  "#ffffff",  // white text ON a dark navy button
     tint:        tintColorLight,
     tabIconDefault:  "#9ca3af",
     tabIconSelected: tintColorLight,
@@ -60,14 +60,14 @@ const Colors = {
 
   dark: {
     // Brand
-    primary:     "#FFD700",  // golden yellow — pops on dark
-    primaryLight:"#2a2400",  // very dark yellow-tinted surface
-    accent:      "#FFD700",
+    primary:     "#D4AF37",  // metallic gold — premium accent
+    primaryLight:"#211B05",  // very dark gold-tinted surface
+    accent:      "#D4AF37",
 
     // Surfaces
-    background:  "#0f0f11",  // near-black page bg
-    card:        "#1a1a1e",  // slightly elevated surface
-    overlay:     "rgba(255, 215, 0, 0.06)",
+    background:  "#0A0F1C",  // deep navy / near-black page bg
+    card:        "#131B2B",  // slightly elevated dark navy surface
+    overlay:     "rgba(212, 175, 55, 0.08)",
 
     // Text
     text:        "#f1f5f9",  // near-white for readability on dark bg
@@ -75,7 +75,7 @@ const Colors = {
     inverse:     "#0f0f11",
 
     // Interactive
-    buttonText:  "#1a1a1e",  // dark text ON yellow gradient button
+    buttonText:  "#000000",  // dark text ON a yellow button
     tint:        tintColorDark,
     tabIconDefault:  "#64748b",
     tabIconSelected: tintColorDark,

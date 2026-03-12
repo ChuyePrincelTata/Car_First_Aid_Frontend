@@ -17,7 +17,7 @@
 import { Image, View, Text, StyleSheet, TouchableOpacity } from "react-native"
 import { Tabs, useRouter } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { Camera, Home, User, History, MessageSquare, Bell, Search } from "@/components/SafeLucide"
+import { Home, Camera, MessageSquare, History, User, Bell, Search, Activity, Wrench, ClipboardList } from "@/components/SafeLucide"
 import { useTheme } from "@/context/ThemeContext"
 import UserAvatar from "@/components/UserAvatar"
 import SearchModal from "@/components/SearchModal"
@@ -169,21 +169,24 @@ export default function TabLayout() {
         tabBarInactiveTintColor: colors.tabIconDefault,
         tabBarStyle: {
           backgroundColor: isDark ? colors.card : "#ffffff",
-          borderTopColor:  colors.border,
-          borderTopWidth:  StyleSheet.hairlineWidth,
-          height: 54 + insets.bottom,
-          paddingBottom: insets.bottom + 6,
-          paddingTop: 6,
-          elevation: 8,
+          borderTopWidth:  0, // Remove original border for floating effect
+          height: 60,
+          marginBottom: insets.bottom + 12,
+          marginHorizontal: 20,
+          borderRadius: 30, // Fully rounded floating pill
+          paddingBottom: 8,
+          paddingTop: 8,
+          elevation: 10,
           shadowColor: "#000",
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.06,
-          shadowRadius: 6,
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: isDark ? 0.3 : 0.1,
+          shadowRadius: 8,
+          position: 'absolute', // Required for floating effect
         },
         tabBarLabelStyle: {
           fontFamily: FontFamily.medium,
           fontSize: 10,
-          marginTop: -2,
+          marginTop: -4,
         },
       }}
     >
@@ -202,21 +205,21 @@ export default function TabLayout() {
         name="diagnose"
         options={{
           title: "Diagnose",
-          tabBarIcon: ({ color, size }) => <Camera size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Activity size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="mechanics/index"
         options={{
           title: "Mechanics",
-          tabBarIcon: ({ color, size }) => <MessageSquare size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Wrench size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="history/index"
         options={{
           title: "History",
-          tabBarIcon: ({ color, size }) => <History size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <ClipboardList size={size} color={color} />,
         }}
       />
       <Tabs.Screen
