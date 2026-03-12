@@ -165,8 +165,15 @@ export default function TabLayout() {
       screenOptions={{
         // Default header for all tabs (overridden per-screen below)
         header: () => <AppHeader />,
-        tabBarActiveTintColor:   colors.primary,
+        tabBarActiveTintColor:   colors.buttonText, // Use button text color since background is primary
         tabBarInactiveTintColor: colors.tabIconDefault,
+        tabBarActiveBackgroundColor: colors.primary,
+        tabBarItemStyle: {
+          borderRadius: 20,
+          marginHorizontal: 8,
+          marginVertical: 4,
+          paddingVertical: 4,
+        },
         tabBarStyle: {
           backgroundColor: isDark ? colors.card : "#ffffff",
           borderTopColor: isDark ? colors.border : "#e2e8f0",
