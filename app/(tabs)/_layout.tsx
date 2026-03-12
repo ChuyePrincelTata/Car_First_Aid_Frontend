@@ -172,8 +172,8 @@ export default function TabLayout() {
           borderRadius: 16,
           marginHorizontal: 8,
           marginVertical: 4,
-          paddingVertical: 2, // Less internal padding so content can breathe
-          height: 52, 
+          paddingTop: 4, // Equal padding above icon
+          paddingBottom: 4, // Equal padding below text
         },
         tabBarStyle: {
           backgroundColor: isDark ? colors.card : "#ffffff",
@@ -188,7 +188,8 @@ export default function TabLayout() {
         tabBarLabelStyle: {
           fontFamily: FontFamily.medium,
           fontSize: 10,
-          marginBottom: 4, // Lift the text up away from the bottom of the pill
+          marginBottom: 2, // Slight nudge just to give text breathing room from the pill bottom
+          marginTop: 2, // Equivalent nudge down from the icon
         },
       }}
     >
