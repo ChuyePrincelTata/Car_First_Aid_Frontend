@@ -1,11 +1,14 @@
 import { useState } from "react"
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, ImageBackground } from "react-native"
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, Dimensions } from "react-native"
 import { useTheme } from "@/context/ThemeContext"
 import { useAuth } from "@/context/AuthContext"
-import { Camera, Mic, MessageSquare, AlertTriangle } from "@/components/SafeLucide"
+import { Camera, Mic, MessageSquare, AlertTriangle, ArrowRight, Star } from "@/components/SafeLucide"
 import LinearGradient from "@/components/LinearGradient"
 import { useRouter } from "expo-router"
 import React from "react"
+import { FontFamily } from "@/constants/Theme"
+
+const { width } = Dimensions.get("window")
 
 export default function HomeScreen() {
   const { colors, isDark } = useTheme()
@@ -23,267 +26,324 @@ export default function HomeScreen() {
       paddingBottom: 8,
     },
     greeting: {
-      fontSize: 16,
-      color: colors.text,
-      fontFamily: "Poppins-Regular",
-      marginBottom: 4,
+      fontSize: 14,
+      color: colors.tabIconDefault,
+      fontFamily: FontFamily.medium,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+      marginBottom: 2,
     },
     userName: {
-      fontSize: 24,
-      fontFamily: "Poppins-Bold",
+      fontSize: 26,
+      fontFamily: FontFamily.bold,
       color: colors.text,
-      marginBottom: 8,
+      letterSpacing: -0.5,
     },
-    banner: {
-      marginTop: 20,
+    bannerContainer: {
+      marginTop: 16,
       marginHorizontal: 24,
-      borderRadius: 16,
+      borderRadius: 24,
       overflow: "hidden",
       height: 180,
+      elevation: 8,
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.2,
+      shadowRadius: 12,
     },
-    bannerImage: {
-      width: "100%",
-      height: "100%",
-    },
-    bannerContent: {
-      position: "absolute",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      padding: 20,
-      justifyContent: "center",
+    bannerGradient: {
+      flex: 1,
+      padding: 24,
+      justifyContent: "space-between",
     },
     bannerTitle: {
-      fontSize: 24,
-      fontFamily: "Poppins-Bold",
-      color: "#fff",
-      marginBottom: 8,
+      fontSize: 28,
+      fontFamily: FontFamily.bold,
+      color: "#ffffff",
+      lineHeight: 34,
     },
     bannerText: {
       fontSize: 14,
-      fontFamily: "Poppins-Regular",
-      color: "#fff",
-      marginBottom: 16,
-      maxWidth: "80%",
+      fontFamily: FontFamily.medium,
+      color: "rgba(255, 255, 255, 0.8)",
+      marginTop: 8,
+      maxWidth: "70%",
     },
     bannerButton: {
-      backgroundColor: colors.primary,
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      borderRadius: 8,
+      backgroundColor: "#ffffff",
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderRadius: 100,
       alignSelf: "flex-start",
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
     },
     bannerButtonText: {
-      color: colors.secondary,
-      fontFamily: "Poppins-Medium",
+      color: colors.primary,
+      fontFamily: FontFamily.semiBold,
+      fontSize: 14,
+    },
+    sectionHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-end",
+      marginTop: 32,
+      marginBottom: 16,
+      paddingHorizontal: 24,
     },
     sectionTitle: {
       fontSize: 18,
-      fontFamily: "Poppins-Medium",
+      fontFamily: FontFamily.semiBold,
       color: colors.text,
-      marginBottom: 16,
-      marginTop: 24,
-      paddingHorizontal: 24,
     },
-    diagnosisOptions: {
-      paddingHorizontal: 16,
+    sectionAction: {
+      fontSize: 13,
+      fontFamily: FontFamily.medium,
+      color: colors.tabIconDefault,
     },
-    optionsRow: {
+    gridContainer: {
+      paddingHorizontal: 16, // So margins add up to 24 (16+8)
+    },
+    gridRow: {
       flexDirection: "row",
-      justifyContent: "space-between",
+      marginBottom: 16,
     },
-    optionCard: {
+    gridTile: {
       flex: 1,
       backgroundColor: colors.card,
-      borderRadius: 16,
-      padding: 20,
-      margin: 8,
+      borderRadius: 20,
+      padding: 16,
+      marginHorizontal: 8, // Half of 16
+      height: 130, // Much more compact than 200px
+      justifyContent: "space-between",
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: isDark ? colors.border : "transparent",
+      elevation: 2,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+    },
+    tileIconWrap: {
+      width: 44,
+      height: 44,
+      borderRadius: 14,
+      backgroundColor: isDark ? colors.primary + "15" : colors.primary + "10",
       alignItems: "center",
       justifyContent: "center",
-      height: 200,
-      shadowColor: "#000",
-      shadowOffset: {
-        width: 0,
-        height: 2,
-      },
-      shadowOpacity: 0.1,
-      shadowRadius: 3.84,
-      elevation: 5,
     },
-    optionIcon: {
-      marginBottom: 16,
-      padding: 16,
-      borderRadius: 50,
-      backgroundColor: "rgba(255, 215, 0, 0.1)",
-    },
-    optionTitle: {
-      fontSize: 16,
-      fontFamily: "Poppins-Medium",
+    tileTitle: {
+      fontSize: 15,
+      fontFamily: FontFamily.semiBold,
       color: colors.text,
-      textAlign: "center",
+      marginTop: 12,
     },
-    optionDescription: {
-      fontSize: 12,
-      fontFamily: "Poppins-Regular",
+    tileDesc: {
+      fontSize: 11,
+      fontFamily: FontFamily.medium,
       color: colors.tabIconDefault,
-      textAlign: "center",
       marginTop: 4,
     },
-    mechanicSection: {
-      paddingHorizontal: 24,
-      marginTop: 24,
-      marginBottom: 40,
+    carouselContainer: {
+      paddingLeft: 24,
+      paddingRight: 8, // Let the last item clip nicely
+      paddingBottom: 40,
     },
     mechanicCard: {
       backgroundColor: colors.card,
-      borderRadius: 16,
-      padding: 20,
+      borderRadius: 20,
+      padding: 16,
+      marginRight: 16,
+      width: width * 0.65, // Shows 1.5 cards on screen
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: isDark ? colors.border : "transparent",
+      elevation: 2,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+    },
+    mechanicHeader: {
       flexDirection: "row",
       alignItems: "center",
-      shadowColor: "#000",
-      shadowOffset: {
-        width: 0,
-        height: 2,
-      },
-      shadowOpacity: 0.1,
-      shadowRadius: 3.84,
-      elevation: 5,
+      marginBottom: 16,
     },
-    mechanicImage: {
-      width: 60,
-      height: 60,
-      borderRadius: 30,
-      marginRight: 16,
-    },
-    mechanicInfo: {
-      flex: 1,
+    mechanicAvatar: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      marginRight: 12,
     },
     mechanicName: {
-      fontSize: 16,
-      fontFamily: "Poppins-Medium",
+      fontSize: 15,
+      fontFamily: FontFamily.semiBold,
       color: colors.text,
-      marginBottom: 4,
     },
-    mechanicSpecialty: {
-      fontSize: 14,
-      fontFamily: "Poppins-Regular",
-      color: colors.tabIconDefault,
-      marginBottom: 8,
-    },
-    mechanicStats: {
-      flexDirection: "row",
-      alignItems: "center",
-    },
-    rating: {
-      flexDirection: "row",
-      alignItems: "center",
-    },
-    ratingText: {
+    mechanicRole: {
       fontSize: 12,
-      fontFamily: "Poppins-Regular",
+      fontFamily: FontFamily.regular,
+      color: colors.tabIconDefault,
+      marginTop: 2,
+    },
+    mechanicFooter: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingTop: 12,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.border,
+    },
+    mechanicRating: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+    },
+    ratingNum: {
+      fontSize: 13,
+      fontFamily: FontFamily.semiBold,
+      color: colors.text,
+    },
+    contactBtn: {
+      backgroundColor: isDark ? colors.primary + "20" : colors.primary + "15",
+      paddingHorizontal: 14,
+      paddingVertical: 6,
+      borderRadius: 100,
+    },
+    contactBtnTxt: {
+      fontSize: 12,
+      fontFamily: FontFamily.semiBold,
       color: colors.primary,
-      marginLeft: 2,
-    },
-    mechanicContact: {
-      backgroundColor: colors.primary,
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      borderRadius: 8,
-      alignSelf: "flex-start",
-      marginTop: 8,
-    },
-    mechanicContactText: {
-      color: colors.secondary,
-      fontFamily: "Poppins-Medium",
     },
   })
+
+  // Dynamic gradient based on theme (Dark Navy -> Muted Gold accent)
+  const bannerColors = isDark 
+    ? ["#0A0F1C", "#1A2235"] // Deep navy gradient
+    : [colors.primary, "#002B5C"] // Distinct identity for light mode
 
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Header Greeting */}
         <View style={styles.header}>
-          <Text style={styles.greeting}>Good to see you,</Text>
+          <Text style={styles.greeting}>Good to see you</Text>
           <Text style={styles.userName}>{user?.name || "Guest"}</Text>
         </View>
 
-        <View style={styles.banner}>
-          <ImageBackground
-            source={{ uri: "https://images.pexels.com/photos/4489732/pexels-photo-4489732.jpeg" }}
-            style={styles.bannerImage}
-          >
-            <LinearGradient colors={["rgba(0,0,0,0.7)", "rgba(0,0,0,0.4)"]} style={styles.bannerContent}>
+        {/* Hero Banner */}
+        <View style={styles.bannerContainer}>
+          <LinearGradient colors={bannerColors} style={styles.bannerGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+            <View>
               <Text style={styles.bannerTitle}>Car Issues?</Text>
-              <Text style={styles.bannerText}>Get instant AI-powered diagnosis for your vehicle problems</Text>
-              <TouchableOpacity style={styles.bannerButton} onPress={() => router.push("/(tabs)/diagnose")}>
-                <Text style={styles.bannerButtonText}>Diagnose Now</Text>
-              </TouchableOpacity>
-            </LinearGradient>
-          </ImageBackground>
-        </View>
-
-        <Text style={styles.sectionTitle}>How would you like to diagnose?</Text>
-
-        <View style={styles.diagnosisOptions}>
-          <View style={styles.optionsRow}>
-            <TouchableOpacity style={styles.optionCard} onPress={() => router.push("/(tabs)/diagnose")}>
-              <View style={styles.optionIcon}>
-                <Camera size={32} color={colors.primary} />
-              </View>
-              <Text style={styles.optionTitle}>Dashboard Light</Text>
-              <Text style={styles.optionDescription}>Snap a photo of your dashboard warning</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.optionCard} onPress={() => router.push("/(tabs)/diagnose/sound")}>
-              <View style={styles.optionIcon}>
-                <Mic size={32} color={colors.primary} />
-              </View>
-              <Text style={styles.optionTitle}>Engine Sound</Text>
-              <Text style={styles.optionDescription}>Record unusual engine sounds</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.optionsRow}>
-            <TouchableOpacity style={styles.optionCard} onPress={() => router.push("/(tabs)/mechanics")}>
-              <View style={styles.optionIcon}>
-                <MessageSquare size={32} color={colors.primary} />
-              </View>
-              <Text style={styles.optionTitle}>Contact a Mechanic</Text>
-              <Text style={styles.optionDescription}>Connect with certified mechanics</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.optionCard} onPress={() => router.push("./(tabs)/diagnose/manual")}>
-              <View style={styles.optionIcon}>
-                <AlertTriangle size={32} color={colors.primary} />
-              </View>
-              <Text style={styles.optionTitle}>Manual Input</Text>
-              <Text style={styles.optionDescription}>Describe your car problems</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <Text style={styles.sectionTitle}>Top Rated Mechanics</Text>
-
-        <View style={styles.mechanicSection}>
-          <TouchableOpacity style={styles.mechanicCard}>
-            <Image
-              source={{ uri: "https://images.pexels.com/photos/8993561/pexels-photo-8993561.jpeg" }}
-              style={styles.mechanicImage}
-            />
-            <View style={styles.mechanicInfo}>
-              <Text style={styles.mechanicName}>John Smith</Text>
-              <Text style={styles.mechanicSpecialty}>Engine Specialist • 10 yrs exp</Text>
-              <View style={styles.mechanicStats}>
-                <View style={styles.rating}>
-                  <Text style={styles.ratingText}>★★★★★ 4.8</Text>
-                </View>
-              </View>
-              <TouchableOpacity style={styles.mechanicContact}>
-                <Text style={styles.mechanicContactText}>Contact</Text>
-              </TouchableOpacity>
+              <Text style={styles.bannerText}>Get instant AI-powered diagnosis for your vehicle.</Text>
             </View>
+            <TouchableOpacity style={styles.bannerButton} onPress={() => router.push("/(tabs)/diagnose")}>
+              <Text style={styles.bannerButtonText}>Diagnose Now</Text>
+              <ArrowRight size={14} color={colors.primary} />
+            </TouchableOpacity>
+          </LinearGradient>
+        </View>
+
+        {/* Diagnostic Action Grid */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Diagnosis Tools</Text>
+        </View>
+
+        <View style={styles.gridContainer}>
+          <View style={styles.gridRow}>
+            <TouchableOpacity style={styles.gridTile} onPress={() => router.push("/(tabs)/diagnose")}>
+              <View style={styles.tileIconWrap}>
+                <Camera size={22} color={colors.primary} />
+              </View>
+              <View>
+                <Text style={styles.tileTitle}>Scanner</Text>
+                <Text style={styles.tileDesc}>Dashboards & parts</Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.gridTile} onPress={() => router.push("/(tabs)/diagnose/sound")}>
+              <View style={styles.tileIconWrap}>
+                <Mic size={22} color={colors.primary} />
+              </View>
+              <View>
+                <Text style={styles.tileTitle}>Audio</Text>
+                <Text style={styles.tileDesc}>Engine noises</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.gridRow}>
+            <TouchableOpacity style={styles.gridTile} onPress={() => router.push("/(tabs)/mechanics")}>
+              <View style={styles.tileIconWrap}>
+                <MessageSquare size={22} color={colors.primary} />
+              </View>
+              <View>
+                <Text style={styles.tileTitle}>Mechanics</Text>
+                <Text style={styles.tileDesc}>Ask a professional</Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.gridTile} onPress={() => router.push("./(tabs)/diagnose/manual")}>
+              <View style={styles.tileIconWrap}>
+                <AlertTriangle size={22} color={colors.primary} />
+              </View>
+              <View>
+                <Text style={styles.tileTitle}>Manual</Text>
+                <Text style={styles.tileDesc}>Text description</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Top Mechanics Carousel */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Top Rated Mechanics</Text>
+          <TouchableOpacity onPress={() => router.push("/(tabs)/mechanics")}>
+            <Text style={styles.sectionAction}>See All</Text>
           </TouchableOpacity>
         </View>
+
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.carouselContainer}
+        >
+          <View style={styles.mechanicCard}>
+            <View style={styles.mechanicHeader}>
+              <Image source={{ uri: "https://images.pexels.com/photos/8993561/pexels-photo-8993561.jpeg" }} style={styles.mechanicAvatar} />
+              <View>
+                <Text style={styles.mechanicName}>John Smith</Text>
+                <Text style={styles.mechanicRole}>Engine Specialist</Text>
+              </View>
+            </View>
+            <View style={styles.mechanicFooter}>
+              <View style={styles.mechanicRating}>
+                <Star size={14} color="#D4AF37" fill="#D4AF37" />
+                <Text style={styles.ratingNum}>4.8</Text>
+              </View>
+              <TouchableOpacity style={styles.contactBtn} onPress={() => router.push("/(tabs)/mechanics")}>
+                <Text style={styles.contactBtnTxt}>Contact</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={styles.mechanicCard}>
+            <View style={styles.mechanicHeader}>
+              <Image source={{ uri: "https://images.pexels.com/photos/4489732/pexels-photo-4489732.jpeg" }} style={styles.mechanicAvatar} />
+              <View>
+                <Text style={styles.mechanicName}>Sarah Johnson</Text>
+                <Text style={styles.mechanicRole}>Electrical Systems</Text>
+              </View>
+            </View>
+            <View style={styles.mechanicFooter}>
+              <View style={styles.mechanicRating}>
+                <Star size={14} color="#D4AF37" fill="#D4AF37" />
+                <Text style={styles.ratingNum}>4.9</Text>
+              </View>
+              <TouchableOpacity style={styles.contactBtn} onPress={() => router.push("/(tabs)/mechanics")}>
+                <Text style={styles.contactBtnTxt}>Contact</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
       </ScrollView>
     </View>
   )

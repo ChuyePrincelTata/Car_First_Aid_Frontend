@@ -75,13 +75,13 @@ const Colors = {
     inverse:     "#0f0f11",
 
     // Interactive
-    buttonText:  "#000000",  // dark text ON a yellow button
+    buttonText:  "#000000",  // dark text ON a gold button
     tint:        tintColorDark,
     tabIconDefault:  "#64748b",
     tabIconSelected: tintColorDark,
 
     // Borders
-    border:      "#2d2d35",
+    border:      "#212B3F",  // subtle navy border
 
     // Semantic
     notification: "#f87171",
@@ -90,7 +90,7 @@ const Colors = {
     warning:      "#fbbf24",
 
     // Aliases
-    secondary: "#1a1a1e",
+    secondary: "#131B2B",
   },
 } as const
 
