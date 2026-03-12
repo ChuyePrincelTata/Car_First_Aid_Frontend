@@ -166,62 +166,30 @@ export default function TabLayout() {
         // Default header for all tabs (overridden per-screen below)
         header: () => <AppHeader />,
         tabBarActiveTintColor:   colors.primary, // Back to Navy/Gold since background is now faint
-        tabBarInactiveTintColor: colors.tabIconDefault,
+        tabBarActiveBackgroundColor: isDark ? colors.primary + "20" : colors.primary + "15",
+        tabBarItemStyle: {
+          borderRadius: 20, // Better rounded pill shape
+          marginHorizontal: 12, // Gap between tabs
+          marginVertical: 8, // Margins pulling it away from edges
+          paddingTop: 8, // Force padding inside pill above icon
+          paddingBottom: 4, // Force padding inside pill below text (less since text naturally rests lower in React Nav)
+          justifyContent: "center",
+          alignItems: "center",
+          height: 60, // Fixed height specifically for the item itself
+        },
         tabBarStyle: {
           backgroundColor: isDark ? colors.card : "#ffffff",
           borderTopColor: isDark ? colors.border : "#e2e8f0",
           borderTopWidth: StyleSheet.hairlineWidth,
-          height: 65 + insets.bottom,
-          paddingBottom: insets.bottom,
+          height: 76 + insets.bottom, // Give the whole bar enough height to fit the 60px item + 16px vertical margins
+          paddingBottom: insets.bottom, 
           elevation: 0,
           shadowOpacity: 0,
-        },
-        tabBarButton: (props) => {
-          const isFocused = props.accessibilityState?.selected;
-          const { onPress, onLongPress, accessibilityState, accessibilityLabel, testID } = props;
-          
-          return (
-            <TouchableOpacity
-              onPress={onPress ?? undefined}
-              onLongPress={onLongPress ?? undefined}
-              accessibilityState={accessibilityState}
-              accessibilityLabel={accessibilityLabel}
-              testID={testID}
-              activeOpacity={0.8}
-              style={{
-                flex: 1,
-                alignItems: "center",
-                justifyContent: "center",
-                paddingVertical: 6,
-              }}
-            >
-              <View
-                style={{
-                  alignItems: "center",
-                  justifyContent: "center",
-                  paddingVertical: 8,
-                  paddingHorizontal: 20,
-                  backgroundColor: isFocused
-                    ? isDark
-                      ? colors.primary + "20"
-                      : colors.primary + "15"
-                    : "transparent",
-                  borderRadius: 16,
-                }}
-              >
-                {/* 
-                  React Navigation passes down the children which includes both the Icon and the Label. 
-                  By wrapping them in this View, the background is mathematically forced to cover both.
-                */}
-                {props.children}
-              </View>
-            </TouchableOpacity>
-          );
         },
         tabBarLabelStyle: {
           fontFamily: FontFamily.medium,
           fontSize: 10,
-          marginTop: 4, 
+          paddingBottom: 4, // Final nudge upward inside the 60px item box
         },
       }}
     >
