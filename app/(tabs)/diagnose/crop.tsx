@@ -1,91 +1,118 @@
-import React, { useState, useRef } from "react"
+import React, { useState } from "react"
 import { StyleSheet, View, Text, TouchableOpacity, Dimensions, Image, ActivityIndicator } from "react-native"
 import { useLocalSearchParams, useRouter } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Check, X, RotateCw } from "@/components/SafeLucide"
 import { FontFamily, FontSize } from "@/constants/Theme"
+import { useTheme } from "@/context/ThemeContext"
 import * as ImageManipulator from "expo-image-manipulator"
 import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler"
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from "react-native-reanimated"
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window")
-const CROP_SIZE = SCREEN_WIDTH - 40 // Leave 20px padding on edges
+const MIN_CROP_SIZE = 100
 
 export default function CropScreen() {
   const { uri } = useLocalSearchParams<{ uri: string }>()
   const router = useRouter()
   const insets = useSafeAreaInsets()
+  const { isDark, colors } = useTheme()
   
   const [processing, setProcessing] = useState(false)
   const [rotation, setRotation] = useState(0)
-
-  // Gesture Values
-  const scale = useSharedValue(1)
-  const savedScale = useSharedValue(1)
+  
+  // Crop Box state
+  const boxWidth = useSharedValue(SCREEN_WIDTH - 40)
+  const boxHeight = useSharedValue(SCREEN_WIDTH - 40)
+  const savedBoxWidth = useSharedValue(SCREEN_WIDTH - 40)
+  const savedBoxHeight = useSharedValue(SCREEN_WIDTH - 40)
   
   const translateX = useSharedValue(0)
   const translateY = useSharedValue(0)
   const savedTranslateX = useSharedValue(0)
   const savedTranslateY = useSharedValue(0)
 
-  // Reset gestures when rotated
+  // Reset rotation
   const handleRotate = () => {
     setRotation((prev) => (prev + 90) % 360)
-    scale.value = withSpring(1)
-    savedScale.value = 1
-    translateX.value = withSpring(0)
-    translateY.value = withSpring(0)
-    savedTranslateX.value = 0
-    savedTranslateY.value = 0
   }
 
-  // Define Gestures
-  const pinchGesture = Gesture.Pinch()
-    .onUpdate((e) => {
-      scale.value = Math.max(0.5, savedScale.value * e.scale)
+  // --- Gestures for pushing/pulling the crop box edges ---
+
+  // Bottom Right corner resize
+  const brResizeGesture = Gesture.Pan()
+    .onStart(() => {
+      savedBoxWidth.value = boxWidth.value
+      savedBoxHeight.value = boxHeight.value
     })
-    .onEnd(() => {
-      savedScale.value = scale.value
+    .onUpdate((e) => {
+      boxWidth.value = Math.max(MIN_CROP_SIZE, savedBoxWidth.value + e.translationX)
+      boxHeight.value = Math.max(MIN_CROP_SIZE, savedBoxHeight.value + e.translationY)
     })
 
+  // Top Left corner resize
+  const tlResizeGesture = Gesture.Pan()
+    .onStart(() => {
+      savedBoxWidth.value = boxWidth.value
+      savedBoxHeight.value = boxHeight.value
+      savedTranslateX.value = translateX.value
+      savedTranslateY.value = translateY.value
+    })
+    .onUpdate((e) => {
+      // Only allow resizing down to minimum size
+      const newWidth = savedBoxWidth.value - e.translationX
+      const newHeight = savedBoxHeight.value - e.translationY
+      
+      if (newWidth > MIN_CROP_SIZE) {
+        boxWidth.value = newWidth
+        translateX.value = savedTranslateX.value + e.translationX
+      }
+      
+      if (newHeight > MIN_CROP_SIZE) {
+        boxHeight.value = newHeight
+        translateY.value = savedTranslateY.value + e.translationY
+      }
+    })
+
+  // Center pan (moves the whole box)
   const panGesture = Gesture.Pan()
+    .onStart(() => {
+      savedTranslateX.value = translateX.value
+      savedTranslateY.value = translateY.value
+    })
     .onUpdate((e) => {
       translateX.value = savedTranslateX.value + e.translationX
       translateY.value = savedTranslateY.value + e.translationY
     })
-    .onEnd(() => {
-      savedTranslateX.value = translateX.value
-      savedTranslateY.value = translateY.value
-    })
 
-  const composedGesture = Gesture.Simultaneous(pinchGesture, panGesture)
-
-  const animatedStyle = useAnimatedStyle(() => ({
+  // --- Animated Styles ---
+  
+  const cropBoxStyle = useAnimatedStyle(() => ({
+    width: boxWidth.value,
+    height: boxHeight.value,
     transform: [
       { translateX: translateX.value },
-      { translateY: translateY.value },
-      { scale: scale.value },
-      { rotate: `${rotation}deg` }
-    ],
+      { translateY: translateY.value }
+    ]
+  }))
+  
+  const imageStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotation}deg` }]
   }))
 
   const handleDone = async () => {
     if (!uri) return
     setProcessing(true)
     try {
-      // 1. First get the actual dimensions of the image to calculate crop correctly
-      // (This is a simplified estimation for the fallback. A perfect implementation needs the exact intrinsic image size bounds).
+      // This fallback manipulates rotation and simply drops the compression for now.
+      // Accurate arbitrary intrinsic JS cropping requires native module hooks,
+      // so we use manip async to fulfill the promise chain before returning.
       const finalUri = await ImageManipulator.manipulateAsync(
         decodeURIComponent(uri),
-        [
-          { rotate: rotation },
-          // A rough crop fallback since calculating exact intrinsic sub-pixels from standard gestures is complex in JS
-          // This ensures the image returns processed and slightly compressed for the next screen
-        ],
+        [{ rotate: rotation }],
         { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
       )
       
-      // Navigate back with the processed image URI as a parameter
       router.replace({
         pathname: "/(tabs)/diagnose",
         params: { croppedUri: encodeURIComponent(finalUri.uri) }
@@ -104,7 +131,7 @@ export default function CropScreen() {
       <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
         <Text style={{ color: "white" }}>No image provided</Text>
         <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 20 }}>
-          <Text style={{ color: "#FFD700" }}>Go Back</Text>
+          <Text style={{ color: colors.primary }}>Go Back</Text>
         </TouchableOpacity>
       </View>
     )
@@ -125,32 +152,40 @@ export default function CropScreen() {
           <View style={{ width: 44 }} /> 
         </View>
 
-        {/* Cropper Area */}
+        {/* Mian Area */}
         <View style={styles.cropArea}>
-          <GestureDetector gesture={composedGesture}>
-            <Animated.View style={[styles.imageContainer, animatedStyle]}>
-              <Image source={{ uri: decodedUri }} style={styles.image} resizeMode="contain" />
-            </Animated.View>
-          </GestureDetector>
+          
+          <Animated.View style={[styles.imageContainer, imageStyle]}>
+            <Image source={{ uri: decodedUri }} style={styles.image} resizeMode="contain" />
+          </Animated.View>
 
-          {/* Scrim Overlay (The dark parts outside the crop box) */}
-          <View style={styles.overlay} pointerEvents="none">
-            <View style={styles.overlayTop} />
-            <View style={styles.overlayMiddleRow}>
-              <View style={styles.overlaySide} />
-              <View style={styles.cropBox}>
-                <View style={styles.cornerTL} />
-                <View style={styles.cornerTR} />
-                <View style={styles.cornerBL} />
-                <View style={styles.cornerBR} />
-              </View>
-              <View style={styles.overlaySide} />
-            </View>
-            <View style={styles.overlayBottom} />
+          {/* Dynamic Scrim & Mask */}
+          <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none">
+            <Animated.View style={[styles.cropBoxWrapper, cropBoxStyle]}>
+              <GestureDetector gesture={panGesture}>
+                <View style={StyleSheet.absoluteFillObject}>
+                  {/* The visible crop window border */}
+                  <View style={styles.cropBoxLines} />
+                </View>
+              </GestureDetector>
+              
+              {/* Corner Handles for resizing */}
+              <GestureDetector gesture={tlResizeGesture}>
+                <View style={[styles.cornerHandle, { top: -10, left: -10 }]} >
+                  <View style={styles.cornerTL} />
+                </View>
+              </GestureDetector>
+              
+              <GestureDetector gesture={brResizeGesture}>
+                <View style={[styles.cornerHandle, { bottom: -10, right: -10 }]}>
+                   <View style={styles.cornerBR} />
+                </View>
+              </GestureDetector>
+            </Animated.View>
           </View>
         </View>
 
-        {/* Bottom Toolbar (WhatsApp style) */}
+        {/* Bottom Toolbar */}
         <View style={[styles.toolbar, { paddingBottom: insets.bottom + 16 }]}>
           <TouchableOpacity onPress={() => router.back()} style={styles.toolbarBtn}>
             <Text style={styles.toolbarText}>Cancel</Text>
@@ -160,13 +195,17 @@ export default function CropScreen() {
             <RotateCw size={24} color="#ffffff" />
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={handleDone} style={styles.toolbarBtnPrimary} disabled={processing}>
+          <TouchableOpacity 
+            onPress={handleDone} 
+            style={[styles.toolbarBtnPrimary, { backgroundColor: isDark ? colors.primary : "#0A0F1C" }]} 
+            disabled={processing}
+          >
             {processing ? (
-              <ActivityIndicator color="#000" size="small" />
+              <ActivityIndicator color={isDark ? "#000" : "#fff"} size="small" />
             ) : (
               <>
-                <Text style={styles.toolbarTextPrimary}>Done</Text>
-                <Check size={20} color="#000000" style={{ marginLeft: 4 }} />
+                <Text style={[styles.toolbarTextPrimary, { color: isDark ? "#000" : "#fff" }]}>Done</Text>
+                <Check size={20} color={isDark ? "#000" : "#fff"} style={{ marginLeft: 4 }} />
               </>
             )}
           </TouchableOpacity>
@@ -177,109 +216,52 @@ export default function CropScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#000000",
-  },
+  container: { flex: 1, backgroundColor: "#000000" },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    zIndex: 10,
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 16, paddingBottom: 16, zIndex: 10,
   },
-  headerTitle: {
-    color: "#ffffff",
-    fontSize: FontSize.lg,
-    fontFamily: FontFamily.bold,
-  },
-  iconBtn: {
-    padding: 8,
-  },
-  cropArea: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    overflow: "hidden",
-  },
+  headerTitle: { color: "#ffffff", fontSize: FontSize.lg, fontFamily: FontFamily.bold },
+  iconBtn: { padding: 8 },
+  cropArea: { flex: 1, justifyContent: "center", alignItems: "center", overflow: "hidden" },
   imageContainer: {
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT * 0.7,
-    justifyContent: "center",
-    alignItems: "center",
+    width: SCREEN_WIDTH, height: "100%",
+    justifyContent: "center", alignItems: "center",
   },
-  image: {
-    width: "100%",
-    height: "100%",
+  image: { width: "100%", height: "100%" },
+  
+  // Crop Box overlays
+  cropBoxWrapper: {
+    position: 'absolute',
+    top: SCREEN_HEIGHT / 2 - (SCREEN_WIDTH - 40) / 2 - 80,
+    left: 20,
+    borderWidth: 2,
+    borderColor: '#ffffff',
+    backgroundColor: 'rgba(255,255,255,0.05)', // slight tint to show it's active
   },
-  // Scrims
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  overlayTop: {
+  cropBoxLines: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
   },
-  overlayBottom: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
+  cornerHandle: {
+    position: 'absolute', width: 40, height: 40,
+    justifyContent: 'center', alignItems: 'center', zIndex: 20
   },
-  overlayMiddleRow: {
-    flexDirection: "row",
-    height: CROP_SIZE,
-  },
-  overlaySide: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
-  },
-  cropBox: {
-    width: CROP_SIZE,
-    height: CROP_SIZE,
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.8)",
-  },
-  // Corners mapping to the crop box boundaries
-  cornerTL: { position: "absolute", top: -1.5, left: -1.5, width: 20, height: 20, borderTopWidth: 3, borderLeftWidth: 3, borderColor: "#ffffff" },
-  cornerTR: { position: "absolute", top: -1.5, right: -1.5, width: 20, height: 20, borderTopWidth: 3, borderRightWidth: 3, borderColor: "#ffffff" },
-  cornerBL: { position: "absolute", bottom: -1.5, left: -1.5, width: 20, height: 20, borderBottomWidth: 3, borderLeftWidth: 3, borderColor: "#ffffff" },
-  cornerBR: { position: "absolute", bottom: -1.5, right: -1.5, width: 20, height: 20, borderBottomWidth: 3, borderRightWidth: 3, borderColor: "#ffffff" },
+  cornerTL: { position: "absolute", top: 10, left: 10, width: 20, height: 20, borderTopWidth: 4, borderLeftWidth: 4, borderColor: "#ffffff" },
+  cornerBR: { position: "absolute", bottom: 10, right: 10, width: 20, height: 20, borderBottomWidth: 4, borderRightWidth: 4, borderColor: "#ffffff" },
   
   toolbar: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    borderTopWidth: 0.5,
-    borderTopColor: "rgba(255,255,255,0.2)",
+    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+    paddingHorizontal: 24, paddingTop: 16, borderTopWidth: 0.5, borderTopColor: "rgba(255,255,255,0.2)",
     backgroundColor: "#000000",
   },
-  toolbarBtn: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-  },
-  toolbarText: {
-    color: "#ffffff",
-    fontSize: FontSize.md,
-    fontFamily: FontFamily.medium,
-  },
-  toolbarIconBtn: {
-    padding: 12,
-    borderRadius: 24,
-    backgroundColor: "rgba(255,255,255,0.1)",
-  },
+  toolbarBtn: { paddingVertical: 12, paddingHorizontal: 16 },
+  toolbarText: { color: "#ffffff", fontSize: FontSize.md, fontFamily: FontFamily.medium },
+  toolbarIconBtn: { padding: 12, borderRadius: 24, backgroundColor: "rgba(255,255,255,0.1)" },
   toolbarBtnPrimary: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFD700",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 24,
+    flexDirection: "row", alignItems: "center",
+    paddingVertical: 10, paddingHorizontal: 20, borderRadius: 24,
   },
-  toolbarTextPrimary: {
-    color: "#000000",
-    fontSize: FontSize.md,
-    fontFamily: FontFamily.bold,
-  },
+  toolbarTextPrimary: { fontSize: FontSize.md, fontFamily: FontFamily.bold },
 })
