@@ -10,7 +10,9 @@ import { useRouter } from "expo-router"
 import { getApiBaseUrl } from "@/utils/apiConfig"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { FontFamily, FontSize, Spacing, Radius } from "@/constants/Theme"
-import React from "react"
+import { useWhatsAppCropper } from "@/hooks/useWhatsAppCropper"
+import { useLocalSearchParams } from "expo-router"
+import React, { useEffect } from "react"
 
 const { width } = Dimensions.get("window")
 
@@ -27,45 +29,37 @@ export default function DiagnoseScreen() {
   const { colors, isDark } = useTheme()
   const insets = useSafeAreaInsets()
   const router = useRouter()
+  const params = useLocalSearchParams<{ croppedUri?: string }>()
+  const { launchCamera, launchCropper } = useWhatsAppCropper()
+
+  // Listen for the returning cropped URI from our Expo Go JS fallback cropper
+  useEffect(() => {
+    if (params.croppedUri) {
+      const decoded = decodeURIComponent(params.croppedUri)
+      setImage(decoded)
+      
+      // We can reset ratio to 1 or try to read it again. 
+      // For simplicity in the fallback, we allow it to fill naturally.
+      Image.getSize(decoded, (w, h) => setImageAspectRatio(w / h), () => setImageAspectRatio(1))
+
+      // Clear the param so it doesn't re-trigger unnecessarily
+      router.setParams({ croppedUri: "" })
+    }
+  }, [params.croppedUri])
 
   const takePicture = async () => {
-    try {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync()
-      if (status !== 'granted') {
-        alert('Sorry, we need camera roll permissions to make this work!')
-        return
-      }
-
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ['images'],
-        allowsEditing: true,
-        quality: 1,
-      })
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        setImage(result.assets[0].uri)
-        const { width, height } = result.assets[0]
-        if (width && height) setImageAspectRatio(width / height)
-      }
-    } catch (error) {
-      console.error("Error taking picture:", error instanceof Error ? error.message : error)
+    const result = await launchCamera()
+    if (result) {
+      setImage(result.uri)
+      if (result.width && result.height) setImageAspectRatio(result.width / result.height)
     }
   }
 
   const pickImage = async () => {
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsEditing: true,
-        quality: 1,
-      })
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        setImage(result.assets[0].uri)
-        const { width, height } = result.assets[0]
-        if (width && height) setImageAspectRatio(width / height)
-      }
-    } catch (error) {
-      console.error("Error picking image:", error instanceof Error ? error.message : error)
+    const result = await launchCropper()
+    if (result) {
+      setImage(result.uri)
+      if (result.width && result.height) setImageAspectRatio(result.width / result.height)
     }
   }
 
