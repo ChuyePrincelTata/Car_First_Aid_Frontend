@@ -1,5 +1,5 @@
 import React from "react"
-import { View, Text, Pressable, StyleSheet } from "react-native"
+import { View, Text, Pressable, StyleSheet, useWindowDimensions } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useTheme } from "@/context/ThemeContext"
 import { FontFamily } from "@/constants/Theme"
@@ -28,10 +28,21 @@ type Props = {
 export default function CustomTabBar({ state, descriptors, navigation }: Props) {
   const { colors, isDark } = useTheme()
   const insets = useSafeAreaInsets()
+  const { width } = useWindowDimensions()
 
   const activeBg    = isDark ? colors.primary + "28" : colors.primary + "1A"
   const activeColor = colors.primary
   const mutedColor  = colors.tabIconDefault
+
+  // Calculate the maximum safe circle size so 5 tabs never overlap even on a 320px wide screen
+  // (width / 5) is the exact touch target. We subtract 4 to leave a 2px gap on each side.
+  // Cap it at 72px so it doesn't get comically huge on tablets.
+  const pillSize = Math.min((width / 5) - 4, 72)
+  const pillRadius = pillSize / 2
+  
+  // If the screen is super narrow, shrink the icon and text slightly so they don't hit the curved edges
+  const iconSize = pillSize < 64 ? 20 : 22
+  const fontSize = pillSize < 64 ? 9 : 10
 
   return (
     <View style={[styles.bar, {
@@ -60,16 +71,19 @@ export default function CustomTabBar({ state, descriptors, navigation }: Props) 
           >
             {/* Single consolidated style object — no StyleSheet merge — forces borderRadius on every render */}
             <View style={{
-              width:           72,
-              height:          72,
-              borderRadius:    36,
+              width:           pillSize,
+              height:          pillSize,
+              borderRadius:    pillRadius,
               overflow:        "hidden",
               backgroundColor: isFocused ? activeBg : "transparent",
               alignItems:      "center",
               justifyContent:  "center",
             }}>
-              <IconComp color={color} size={22} />
-              <Text style={{ color, fontFamily: FontFamily.medium, fontSize: 10, marginTop: 3 }}>
+              <IconComp color={color} size={iconSize} />
+              <Text 
+                numberOfLines={1} 
+                style={{ color, fontFamily: FontFamily.medium, fontSize: fontSize, marginTop: 3 }}
+              >
                 {tab.label}
               </Text>
             </View>
