@@ -116,16 +116,17 @@ export default function DiagnoseScreen() {
     container:      { flex: 1, backgroundColor: colors.background },
     // ─── Header ─────────────────────────────────────────────────────────────
     header: {
-      paddingTop: insets.top + 24, // increased padding for breathing room
+      paddingTop: insets.top + 16,
       paddingHorizontal: Spacing.xl,
-      paddingBottom: Spacing.md,
+      paddingBottom: Spacing.sm,
     },
+    headerTop: { flexDirection: "row", alignItems: "center", marginBottom: 4 },
     backBtn: {
       width: 40, height: 40,
       borderRadius: 20,
       backgroundColor: isDark ? colors.card : "#f1f5f9",
       alignItems: "center", justifyContent: "center",
-      marginBottom: Spacing.sm,
+      marginRight: 12,
     },
     title: {
       fontSize: FontSize.xl,
@@ -137,7 +138,6 @@ export default function DiagnoseScreen() {
       fontSize: FontSize.sm,
       fontFamily: FontFamily.regular,
       color: colors.tabIconDefault,
-      marginTop: 2,
     },
     // ─── Upload Area ─────────────────────────────────────────────────────────
     uploadArea: {
@@ -391,13 +391,15 @@ export default function DiagnoseScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backBtn} 
-          onPress={() => router.canGoBack() ? router.back() : router.replace("/(tabs)")}
-        >
-          <ChevronLeft size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.title}>Dashboard Diagnosis</Text>
+        <View style={styles.headerTop}>
+          <TouchableOpacity 
+            style={styles.backBtn} 
+            onPress={() => router.canGoBack() ? router.back() : router.replace("/(tabs)")}
+          >
+            <ChevronLeft size={24} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.title}>Dashboard Diagnosis</Text>
+        </View>
         <Text style={styles.subtitle}>Snap or upload a photo of your warning lights</Text>
       </View>
 

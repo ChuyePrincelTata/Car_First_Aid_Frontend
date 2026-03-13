@@ -38,6 +38,12 @@ export default function SoundDiagnosisScreen() {
   const a4 = useSharedValue(0)
   const a5 = useSharedValue(0)
 
+  const s1 = useAnimatedStyle(() => ({ height: 20 + a1.value * 20, opacity: 0.4 + a1.value * 0.6 }))
+  const s2 = useAnimatedStyle(() => ({ height: 35 + a2.value * 35, opacity: 0.4 + a2.value * 0.6 }))
+  const s3 = useAnimatedStyle(() => ({ height: 50 + a3.value * 50, opacity: 0.4 + a3.value * 0.6 }))
+  const s4 = useAnimatedStyle(() => ({ height: 35 + a4.value * 35, opacity: 0.4 + a4.value * 0.6 }))
+  const s5 = useAnimatedStyle(() => ({ height: 20 + a5.value * 20, opacity: 0.4 + a5.value * 0.6 }))
+
   useEffect(() => {
     const setupAudio = async () => {
       await Audio.setAudioModeAsync({
@@ -133,9 +139,6 @@ export default function SoundDiagnosisScreen() {
 
   const fmt = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`
 
-  const bar = (anim: SharedValue<number>, base: number) =>
-    useAnimatedStyle(() => ({ height: base + anim.value * base, opacity: 0.4 + anim.value * 0.6 }))
-
   const severityColor = (s: string) =>
     s === "High" || s === "Critical" ? "#ef4444" : s === "Medium" ? "#f59e0b" : "#22c55e"
 
@@ -143,15 +146,16 @@ export default function SoundDiagnosisScreen() {
     container: { flex: 1, backgroundColor: colors.background },
     center: { flex: 1, justifyContent: "center", alignItems: "center" },
     loadingText: { marginTop: Spacing.md, fontSize: FontSize.md, fontFamily: FontFamily.medium, color: colors.text },
-    header: { paddingTop: insets.top + 24, paddingHorizontal: Spacing.xl, paddingBottom: Spacing.sm },
+    header: { paddingTop: insets.top + 16, paddingHorizontal: Spacing.xl, paddingBottom: Spacing.sm },
+    headerTop: { flexDirection: "row", alignItems: "center", marginBottom: 4 },
     backBtn: {
       width: 40, height: 40, borderRadius: 20,
       backgroundColor: isDark ? colors.card : "#f1f5f9",
       alignItems: "center", justifyContent: "center",
-      marginBottom: Spacing.sm,
+      marginRight: 12,
     },
     title: { fontSize: FontSize.xl, fontFamily: FontFamily.bold, color: colors.text, letterSpacing: -0.5 },
-    subtitle: { fontSize: FontSize.sm, fontFamily: FontFamily.regular, color: colors.tabIconDefault, marginTop: 2 },
+    subtitle: { fontSize: FontSize.sm, fontFamily: FontFamily.regular, color: colors.tabIconDefault },
 
     // Central recorder area
     recorderWrap: {
@@ -248,13 +252,15 @@ export default function SoundDiagnosisScreen() {
   return (
     <View style={s.container}>
       <View style={s.header}>
-        <TouchableOpacity 
-          style={s.backBtn} 
-          onPress={() => router.canGoBack() ? router.back() : router.replace("/(tabs)")}
-        >
-          <ChevronLeft size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={s.title}>Sound Diagnosis</Text>
+        <View style={s.headerTop}>
+          <TouchableOpacity 
+            style={s.backBtn} 
+            onPress={() => router.canGoBack() ? router.back() : router.replace("/(tabs)")}
+          >
+            <ChevronLeft size={24} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={s.title}>Sound Diagnosis</Text>
+        </View>
         <Text style={s.subtitle}>Record unusual engine sounds for AI analysis</Text>
       </View>
 
@@ -271,11 +277,11 @@ export default function SoundDiagnosisScreen() {
           {/* Waveform — only shown while recording */}
           {isRecording && (
             <View style={s.waveform}>
-              <Animated.View style={[s.bar, bar(a1, 20)]} />
-              <Animated.View style={[s.bar, bar(a2, 35)]} />
-              <Animated.View style={[s.bar, bar(a3, 50)]} />
-              <Animated.View style={[s.bar, bar(a4, 35)]} />
-              <Animated.View style={[s.bar, bar(a5, 20)]} />
+              <Animated.View style={[s.bar, s1]} />
+              <Animated.View style={[s.bar, s2]} />
+              <Animated.View style={[s.bar, s3]} />
+              <Animated.View style={[s.bar, s4]} />
+              <Animated.View style={[s.bar, s5]} />
             </View>
           )}
 

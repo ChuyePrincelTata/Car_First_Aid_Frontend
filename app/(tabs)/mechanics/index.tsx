@@ -31,21 +31,21 @@ export default function MechanicsScreen() {
       backgroundColor: colors.background,
     },
     header: {
-      paddingTop: insets.top + 24,
+      paddingTop: insets.top + 16,
       paddingHorizontal: 24,
       paddingBottom: 20,
     },
+    headerTop: { flexDirection: "row", alignItems: "center", marginBottom: 16 },
     backBtn: {
       width: 40, height: 40, borderRadius: 20,
       backgroundColor: theme === "dark" ? colors.card : "#f1f5f9",
       alignItems: "center", justifyContent: "center",
-      marginBottom: 12,
+      marginRight: 12,
     },
     title: {
       fontSize: 28,
       fontFamily: "Poppins-Bold",
       color: colors.text,
-      marginBottom: 16,
     },
     searchContainer: {
       flexDirection: "row",
@@ -246,13 +246,15 @@ export default function MechanicsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backBtn} 
-          onPress={() => router.canGoBack() ? router.back() : router.replace("/(tabs)")}
-        >
-          <ChevronLeft size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.title}>Find a Mechanic</Text>
+        <View style={styles.headerTop}>
+          <TouchableOpacity 
+            style={styles.backBtn} 
+            onPress={() => router.canGoBack() ? router.back() : router.replace("/(tabs)")}
+          >
+            <ChevronLeft size={24} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.title}>Find a Mechanic</Text>
+        </View>
         <View style={styles.searchContainer}>
           <Search size={20} color={colors.tabIconDefault} style={styles.searchIcon} />
           <TextInput

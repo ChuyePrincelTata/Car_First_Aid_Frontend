@@ -62,15 +62,16 @@ export default function ManualDiagnosisScreen() {
     loadingText: { marginTop: Spacing.md, fontSize: FontSize.md, fontFamily: FontFamily.medium, color: colors.text },
 
     // Header
-    header: { paddingTop: insets.top + 24, paddingHorizontal: Spacing.xl, paddingBottom: Spacing.sm },
-    title: { fontSize: FontSize.xl, fontFamily: FontFamily.bold, color: colors.text, letterSpacing: -0.5 },
-    subtitle: { fontSize: FontSize.sm, fontFamily: FontFamily.regular, color: colors.tabIconDefault, marginTop: 2 },
+    header: { paddingTop: insets.top + 16, paddingHorizontal: Spacing.xl, paddingBottom: Spacing.sm },
+    headerTop: { flexDirection: "row", alignItems: "center", marginBottom: 4 },
     backBtn: {
       width: 40, height: 40, borderRadius: 20,
       backgroundColor: isDark ? colors.card : "#f1f5f9",
       alignItems: "center", justifyContent: "center",
-      marginBottom: Spacing.sm,
+      marginRight: 12,
     },
+    title: { fontSize: FontSize.xl, fontFamily: FontFamily.bold, color: colors.text, letterSpacing: -0.5 },
+    subtitle: { fontSize: FontSize.sm, fontFamily: FontFamily.regular, color: colors.tabIconDefault },
 
     // Form
     formCard: {
@@ -163,13 +164,15 @@ export default function ManualDiagnosisScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backBtn} 
-          onPress={() => router.canGoBack() ? router.back() : router.replace("/(tabs)")}
-        >
-          <ChevronLeft size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.title}>Manual Diagnosis</Text>
+        <View style={styles.headerTop}>
+          <TouchableOpacity 
+            style={styles.backBtn} 
+            onPress={() => router.canGoBack() ? router.back() : router.replace("/(tabs)")}
+          >
+            <ChevronLeft size={24} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.title}>Manual Diagnosis</Text>
+        </View>
         <Text style={styles.subtitle}>Describe your car problems in detail</Text>
       </View>
 

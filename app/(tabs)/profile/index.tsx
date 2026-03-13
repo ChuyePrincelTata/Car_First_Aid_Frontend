@@ -78,7 +78,7 @@ const ProfileScreen: React.FC = () => {
       backgroundColor: theme === "light" ? "#f0f8ff" : colors.background,
     },
     header: {
-      paddingTop: insets.top + 24,
+      paddingTop: insets.top + 16,
       paddingHorizontal: 24,
       paddingBottom: 24,
       alignItems: "center",
@@ -86,7 +86,7 @@ const ProfileScreen: React.FC = () => {
     },
     backBtn: {
       position: "absolute",
-      top: insets.top + 24,
+      top: insets.top + 16,
       left: 24,
       width: 40, height: 40, borderRadius: 20,
       backgroundColor: theme === "light" ? "#ffffff" : colors.background,
