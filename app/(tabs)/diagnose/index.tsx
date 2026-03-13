@@ -21,6 +21,7 @@ type VideoLink = {
 
 export default function DiagnoseScreen() {
   const [image, setImage] = useState<string | null>(null)
+  const [imageAspectRatio, setImageAspectRatio] = useState<number>(1)
   const [diagnosing, setDiagnosing] = useState(false)
   const [diagnosisResult, setDiagnosisResult] = useState<any>(null)
   const { colors, isDark } = useTheme()
@@ -38,12 +39,13 @@ export default function DiagnoseScreen() {
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ['images'],
         allowsEditing: true,
-        aspect: [4, 3],
         quality: 1,
       })
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         setImage(result.assets[0].uri)
+        const { width, height } = result.assets[0]
+        if (width && height) setImageAspectRatio(width / height)
       }
     } catch (error) {
       console.error("Error taking picture:", error instanceof Error ? error.message : error)
@@ -55,11 +57,12 @@ export default function DiagnoseScreen() {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         allowsEditing: true,
-        aspect: [4, 3], // Fixed aspect ratio for a polished, wide crop screen
         quality: 1,
       })
       if (!result.canceled && result.assets && result.assets.length > 0) {
         setImage(result.assets[0].uri)
+        const { width, height } = result.assets[0]
+        if (width && height) setImageAspectRatio(width / height)
       }
     } catch (error) {
       console.error("Error picking image:", error instanceof Error ? error.message : error)
@@ -106,6 +109,7 @@ export default function DiagnoseScreen() {
   const resetDiagnosis = () => {
     setImage(null)
     setDiagnosisResult(null)
+    setImageAspectRatio(1)
   }
 
   const severityColor = (s: string) => {
@@ -147,13 +151,15 @@ export default function DiagnoseScreen() {
       marginTop: Spacing.md,
       borderRadius: Radius.xl,
       overflow: "hidden",
-      height: 220,
       backgroundColor: colors.card,
       borderWidth: 1.5,
       borderColor: isDark ? colors.primary + "30" : colors.border,
       borderStyle: "dashed",
       alignItems: "center",
       justifyContent: "center",
+    },
+    uploadAreaEmpty: {
+      height: 220,
     },
     uploadAreaFilled: {
       borderStyle: "solid",
@@ -162,8 +168,6 @@ export default function DiagnoseScreen() {
     },
     imagePreview: {
       width: "100%",
-      height: "100%",
-      resizeMode: "cover", // With a forced 4:3 aspect ratio, cover looks best
     },
     uploadIconWrap: {
       width: 64,
@@ -333,9 +337,12 @@ export default function DiagnoseScreen() {
       >
 
         {/* Upload / Preview Area */}
-        <View style={[styles.uploadArea, image && styles.uploadAreaFilled]}>
+        <View style={[
+          styles.uploadArea, 
+          image ? styles.uploadAreaFilled : styles.uploadAreaEmpty
+        ]}>
           {image ? (
-            <Image source={{ uri: image }} style={styles.imagePreview} />
+            <Image source={{ uri: image }} style={[styles.imagePreview, { aspectRatio: imageAspectRatio }]} />
           ) : (
             <>
               <View style={styles.uploadIconWrap}>
