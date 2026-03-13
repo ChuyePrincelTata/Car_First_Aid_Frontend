@@ -286,7 +286,7 @@ export default function SoundDiagnosisScreen() {
         contentContainerStyle={{ 
           flexGrow: 1, 
           paddingBottom: 48,
-          justifyContent: recordingUri ? "flex-start" : "center"
+          justifyContent: diagnosisResult ? "flex-start" : "center"
         }}
       >
         {/* Recorder card */}

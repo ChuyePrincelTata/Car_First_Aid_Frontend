@@ -5,9 +5,7 @@ import {
 } from "react-native"
 import { Camera, Upload, ChevronLeft } from "@/components/SafeLucide"
 import { useTheme } from "@/context/ThemeContext"
-import { CameraView } from "expo-camera"
 import * as ImagePicker from "expo-image-picker"
-import { useCameraPermissions } from "expo-camera"
 import { useRouter } from "expo-router"
 import { getApiBaseUrl } from "@/utils/apiConfig"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
@@ -22,27 +20,31 @@ type VideoLink = {
 }
 
 export default function DiagnoseScreen() {
-  const [permission, requestPermission] = useCameraPermissions()
-  const [showCamera, setShowCamera] = useState(false)
   const [image, setImage] = useState<string | null>(null)
   const [diagnosing, setDiagnosing] = useState(false)
   const [diagnosisResult, setDiagnosisResult] = useState<any>(null)
-  const [facing, setFacing] = useState<"back" | "front">("back")
-  const cameraRef = useRef<any>(null)
   const { colors, isDark } = useTheme()
   const insets = useSafeAreaInsets()
   const router = useRouter()
 
-  const toggleCameraFacing = () => {
-    setFacing((current) => (current === "back" ? "front" : "back"))
-  }
-
   const takePicture = async () => {
-    if (!cameraRef.current) return
     try {
-      const photo = await cameraRef.current.takePictureAsync()
-      setImage(photo.uri)
-      setShowCamera(false)
+      const { status } = await ImagePicker.requestCameraPermissionsAsync()
+      if (status !== 'granted') {
+        alert('Sorry, we need camera roll permissions to make this work!')
+        return
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      })
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setImage(result.assets[0].uri)
+      }
     } catch (error) {
       console.error("Error taking picture:", error instanceof Error ? error.message : error)
     }
@@ -52,8 +54,8 @@ export default function DiagnoseScreen() {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
-        allowsEditing: true, // Native OS cropper for best UX
-        // No fixed 'aspect' ratio so user can crop freely or keep original
+        allowsEditing: true,
+        aspect: [4, 3], // Fixed aspect ratio for a polished, wide crop screen
         quality: 1,
       })
       if (!result.canceled && result.assets && result.assets.length > 0) {
@@ -155,12 +157,13 @@ export default function DiagnoseScreen() {
     },
     uploadAreaFilled: {
       borderStyle: "solid",
-      borderColor: colors.primary + "60",
+      borderColor: colors.primary + "30",
+      backgroundColor: "transparent",
     },
     imagePreview: {
       width: "100%",
       height: "100%",
-      resizeMode: "contain", // show full image without forced cropping
+      resizeMode: "cover", // With a forced 4:3 aspect ratio, cover looks best
     },
     uploadIconWrap: {
       width: 64,
@@ -285,75 +288,13 @@ export default function DiagnoseScreen() {
       flex: 1, fontSize: FontSize.sm,
       fontFamily: FontFamily.medium, color: colors.primary, marginLeft: Spacing.sm,
     },
-    // ─── Loading / Permission ─────────────────────────────────────────────────
+    // ─── Loading ─────────────────────────────────────────────────────────────
     center: { flex: 1, justifyContent: "center", alignItems: "center", padding: Spacing.xl },
     loadingText: {
       marginTop: Spacing.md, fontSize: FontSize.md,
       fontFamily: FontFamily.medium, color: colors.text,
     },
-    permTitle: {
-      fontSize: FontSize.lg, fontFamily: FontFamily.bold,
-      color: colors.text, marginBottom: Spacing.sm, textAlign: "center",
-    },
-    permText: {
-      fontSize: FontSize.sm, fontFamily: FontFamily.regular,
-      color: colors.subtext, textAlign: "center",
-      marginBottom: Spacing.xl, lineHeight: 22,
-    },
-    permBtn: {
-      backgroundColor: colors.primary,
-      paddingVertical: 12, paddingHorizontal: Spacing.xl,
-      borderRadius: Radius.lg,
-    },
-    permBtnText: {
-      color: colors.buttonText,
-      fontSize: FontSize.md, fontFamily: FontFamily.semiBold,
-    },
-    // ─── Camera ──────────────────────────────────────────────────────────────
-    cameraContainer: { flex: 1, backgroundColor: "#000" },
-    camera:          { flex: 1 },
-    cameraControls:  {
-      position: "absolute", bottom: 40, left: 0, right: 0,
-      flexDirection: "row", justifyContent: "space-around", alignItems: "center",
-    },
-    cameraBtn: {
-      width: 44, height: 44, borderRadius: 22,
-      backgroundColor: "rgba(0,0,0,0.4)",
-      justifyContent: "center", alignItems: "center",
-    },
-    captureBtn: {
-      width: 72, height: 72, borderRadius: 36,
-      backgroundColor: "rgba(255,255,255,0.25)",
-      justifyContent: "center", alignItems: "center",
-    },
-    captureBtnInner: { width: 56, height: 56, borderRadius: 28, backgroundColor: "#fff" },
-    cancelTxt: { color: "#fff", fontSize: FontSize.sm, fontFamily: FontFamily.medium },
   })
-
-  // ─── Permission loading ──────────────────────────────────────────────────
-  if (!permission) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Loading camera permissions...</Text>
-      </View>
-    )
-  }
-
-  // ─── Permission denied ───────────────────────────────────────────────────
-  if (!permission.granted) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <Text style={styles.permTitle}>Camera Access Required</Text>
-        <Text style={styles.permText}>
-          We need your camera to photograph dashboard warning lights for accurate AI analysis.
-        </Text>
-        <TouchableOpacity style={styles.permBtn} onPress={requestPermission}>
-          <Text style={styles.permBtnText}>Grant Permission</Text>
-        </TouchableOpacity>
-      </View>
-    )
-  }
 
   // ─── Analyzing loader ────────────────────────────────────────────────────
   if (diagnosing) {
@@ -361,27 +302,6 @@ export default function DiagnoseScreen() {
       <View style={[styles.container, styles.center]}>
         <ActivityIndicator size="large" color={colors.primary} />
         <Text style={styles.loadingText}>Analysing dashboard lights…</Text>
-      </View>
-    )
-  }
-
-  // ─── Camera view ─────────────────────────────────────────────────────────
-  if (showCamera) {
-    return (
-      <View style={styles.cameraContainer}>
-        <CameraView style={styles.camera} facing={facing} ref={cameraRef}>
-          <View style={styles.cameraControls}>
-            <TouchableOpacity style={styles.cameraBtn} onPress={() => setShowCamera(false)}>
-              <Text style={styles.cancelTxt}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.captureBtn} onPress={takePicture}>
-              <View style={styles.captureBtnInner} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.cameraBtn} onPress={toggleCameraFacing}>
-              <Camera size={20} color="#fff" />
-            </TouchableOpacity>
-          </View>
-        </CameraView>
       </View>
     )
   }
@@ -408,7 +328,7 @@ export default function DiagnoseScreen() {
         contentContainerStyle={{ 
           flexGrow: 1, 
           paddingBottom: 48,
-          justifyContent: image ? "flex-start" : "center" // Vertically center when empty
+          justifyContent: diagnosisResult ? "flex-start" : "center" // Vertically center broadly
         }}
       >
 
@@ -431,7 +351,7 @@ export default function DiagnoseScreen() {
         {/* Buttons */}
         {!image ? (
           <View style={styles.buttonRow}>
-            <TouchableOpacity style={[styles.btn, styles.btnPrimary]} onPress={() => setShowCamera(true)}>
+            <TouchableOpacity style={[styles.btn, styles.btnPrimary]} onPress={takePicture}>
               <Text style={[styles.btnText, styles.btnTextPrimary]}>Take Photo</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.btn, styles.btnSecondary]} onPress={pickImage}>

@@ -8,6 +8,7 @@ import { AlertCircle, Camera, Mic, Calendar, ChevronRight, History as HistoryIco
 import { useRouter } from "expo-router"
 import React from "react"
 import { DiagnosisHistory, mockHistory } from "@/data/mockData"
+import { FontFamily, FontSize } from "@/constants/Theme"
 
 export default function HistoryScreen() {
   const { colors, theme } = useTheme()
@@ -54,9 +55,10 @@ export default function HistoryScreen() {
       marginRight: 12,
     },
     title: {
-      fontSize: 28,
-      fontFamily: "Poppins-Bold",
+      fontSize: FontSize.xl,
+      fontFamily: FontFamily.bold,
       color: colors.text,
+      letterSpacing: -0.5,
     },
     filterContainer: {
       flexDirection: "row",

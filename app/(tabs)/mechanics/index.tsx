@@ -4,16 +4,18 @@ import { useState } from "react"
 import { StyleSheet, Text, View, FlatList, TouchableOpacity, Image, TextInput } from "react-native"
 import { useTheme } from "@/context/ThemeContext"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { Search, Star, MapPin, MessageSquare, CheckCircle, ChevronLeft } from "@/components/SafeLucide"
+import { Search, Star, MapPin, MessageSquare, CheckCircle, ChevronLeft, X } from "@/components/SafeLucide"
 import { useRouter } from "expo-router"
 import React from "react"
 import { Mechanic, mockMechanics } from "@/data/mockData"
+import { FontFamily, FontSize } from "@/constants/Theme"
 
 export default function MechanicsScreen() {
   const { colors, theme } = useTheme()
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const [searchQuery, setSearchQuery] = useState("")
+  const [isSearchVisible, setIsSearchVisible] = useState(false)
   const [mechanics, setMechanics] = useState(mockMechanics)
 
   const filteredMechanics = searchQuery
@@ -43,9 +45,13 @@ export default function MechanicsScreen() {
       marginRight: 12,
     },
     title: {
-      fontSize: 28,
-      fontFamily: "Poppins-Bold",
+      fontSize: FontSize.xl,
+      fontFamily: FontFamily.bold,
       color: colors.text,
+      letterSpacing: -0.5,
+    },
+    searchToggle: {
+      padding: 8,
     },
     searchContainer: {
       flexDirection: "row",
@@ -254,17 +260,28 @@ export default function MechanicsScreen() {
             <ChevronLeft size={24} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles.title}>Find a Mechanic</Text>
+          <View style={{ flex: 1 }} />
+          <TouchableOpacity 
+            style={styles.searchToggle}
+            onPress={() => setIsSearchVisible(!isSearchVisible)}
+          >
+            {isSearchVisible ? <X size={24} color={colors.text} /> : <Search size={24} color={colors.text} />}
+          </TouchableOpacity>
         </View>
-        <View style={styles.searchContainer}>
-          <Search size={20} color={colors.tabIconDefault} style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search by name, specialty or location"
-            placeholderTextColor={colors.tabIconDefault}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-        </View>
+        
+        {isSearchVisible && (
+          <View style={styles.searchContainer}>
+            <Search size={20} color={colors.tabIconDefault} style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search by name, specialty or location"
+              placeholderTextColor={colors.tabIconDefault}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoFocus
+            />
+          </View>
+        )}
       </View>
 
       {filteredMechanics.length > 0 ? (

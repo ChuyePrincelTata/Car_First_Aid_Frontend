@@ -37,6 +37,7 @@ import {
   Phone,
   ChevronLeft,
 } from "@/components/SafeLucide"
+import { FontFamily, FontSize } from "@/constants/Theme"
 
 const ProfileScreen: React.FC = () => {
   const { user, signOut } = useAuth() as { user: User; signOut: () => Promise<void> }
@@ -102,10 +103,11 @@ const ProfileScreen: React.FC = () => {
       borderColor: colors.primary,
     },
     name: {
-      fontSize: 24,
-      fontFamily: "Poppins-Bold",
+      fontSize: FontSize.xl,
+      fontFamily: FontFamily.bold,
       color: colors.text,
       textAlign: "center",
+      letterSpacing: -0.5,
     },
     email: {
       fontSize: 14,
