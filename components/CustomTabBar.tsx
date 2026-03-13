@@ -34,10 +34,11 @@ export default function CustomTabBar({ state, descriptors, navigation }: Props) 
   const activeColor = colors.primary
   const mutedColor  = colors.tabIconDefault
 
-  // Calculate the maximum safe circle size so 5 tabs never overlap even on a 320px wide screen
-  // (width / 5) is the exact touch target. We subtract 4 to leave a 2px gap on each side.
-  // Cap it at 72px so it doesn't get comically huge on tablets.
-  const pillSize = Math.min((width / 5) - 4, 72)
+  // The bar has 8px horizontal padding on each side (16px total).
+  // Usable width for 5 tabs is (width - 16). Subtract 4 more per pill for breathing room.
+  // Cap at 68px so it never dominates on large screens.
+  const BAR_PADDING = 8
+  const pillSize = Math.min(((width - BAR_PADDING * 2) / 5) - 4, 68)
   const pillRadius = pillSize / 2
   
   // If the screen is super narrow, shrink the icon and text slightly so they don't hit the curved edges
@@ -49,6 +50,7 @@ export default function CustomTabBar({ state, descriptors, navigation }: Props) 
       backgroundColor: isDark ? colors.card : "#ffffff",
       borderTopColor:  isDark ? colors.border : "#e2e8f0",
       paddingBottom:   insets.bottom + 6,
+      paddingHorizontal: 8, // Keeps pills from touching screen edges on ANY device
     }]}>
       {state.routes.map((route: any, index: number) => {
         const isFocused = state.index === index
