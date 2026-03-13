@@ -23,6 +23,7 @@ export default function SoundDiagnosisScreen() {
   const [sound, setSound] = useState<Audio.Sound | null>(null)
   const [isRecording, setIsRecording] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [isPreparing, setIsPreparing] = useState(false)
   const [recordingUri, setRecordingUri] = useState<string | null>(null)
   const [recordingDuration, setRecordingDuration] = useState(0)
   const [diagnosing, setDiagnosing] = useState(false)
@@ -61,12 +62,14 @@ export default function SoundDiagnosisScreen() {
   }, [sound])
 
   const startRecording = async () => {
+    if (isRecording || recording || isPreparing) return
     try {
+      setIsPreparing(true)
       const perm = await Audio.requestPermissionsAsync()
       if (perm.status !== "granted") { alert("Microphone permission required."); return }
       await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true })
-      const { recording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY)
-      setRecording(recording)
+      const { recording: newRecording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY)
+      setRecording(newRecording)
       setIsRecording(true)
       setRecordingDuration(0)
       recorderTimer.current = setInterval(() => setRecordingDuration((d) => d + 1), 1000)
@@ -74,20 +77,27 @@ export default function SoundDiagnosisScreen() {
       // Start waveform animations
       const opts = (delay: number) => withRepeat(withDelay(delay, withTiming(1, { duration: 700, easing: Easing.ease })), -1, true)
       a1.value = opts(0); a2.value = opts(100); a3.value = opts(200); a4.value = opts(100); a5.value = opts(0)
-    } catch (e) { console.error("Recording failed", e) }
+    } catch (e) { 
+      console.error("Recording failed", e) 
+    } finally {
+      setIsPreparing(false)
+    }
   }
 
   const stopRecording = async () => {
     if (!recording) return
+    setIsRecording(false)
+    if (recorderTimer.current) { clearInterval(recorderTimer.current); recorderTimer.current = null }
+    a1.value = 0; a2.value = 0; a3.value = 0; a4.value = 0; a5.value = 0
     try {
       await recording.stopAndUnloadAsync()
-      setIsRecording(false)
-      if (recorderTimer.current) { clearInterval(recorderTimer.current); recorderTimer.current = null }
       const uri = recording.getURI()
       if (uri) setRecordingUri(uri)
+    } catch (e) { 
+      console.error("Stop failed", e) 
+    } finally {
       setRecording(null)
-      a1.value = 0; a2.value = 0; a3.value = 0; a4.value = 0; a5.value = 0
-    } catch (e) { console.error("Stop failed", e) }
+    }
   }
 
   const playSound = async () => {
@@ -130,6 +140,13 @@ export default function SoundDiagnosisScreen() {
   }
 
   const resetDiagnosis = () => {
+    if (recording) {
+      recording.stopAndUnloadAsync().catch(console.error)
+      setRecording(null)
+    }
+    if (recorderTimer.current) { clearInterval(recorderTimer.current); recorderTimer.current = null }
+    setIsRecording(false)
+    
     setRecordingUri(null)
     setRecordingDuration(0)
     setDiagnosisResult(null)

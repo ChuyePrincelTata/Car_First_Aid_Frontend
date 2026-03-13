@@ -51,7 +51,7 @@ export default function DiagnoseScreen() {
   const pickImage = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true, // Native OS cropper for best UX
         // No fixed 'aspect' ratio so user can crop freely or keep original
         quality: 1,
