@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { StyleSheet, View, Text, TouchableOpacity, Dimensions, Image, ActivityIndicator } from "react-native"
 import { useLocalSearchParams, useRouter } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
@@ -7,10 +7,11 @@ import { FontFamily, FontSize } from "@/constants/Theme"
 import { useTheme } from "@/context/ThemeContext"
 import * as ImageManipulator from "expo-image-manipulator"
 import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler"
-import Animated, { useSharedValue, useAnimatedStyle, withSpring } from "react-native-reanimated"
+import Animated, { useSharedValue, useAnimatedStyle, runOnJS } from "react-native-reanimated"
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window")
-const MIN_CROP_SIZE = 100
+const CROP_AREA_HEIGHT = SCREEN_HEIGHT * 0.7
+const MIN_CROP_SIZE = 80
 
 export default function CropScreen() {
   const { uri } = useLocalSearchParams<{ uri: string }>()
@@ -21,23 +22,56 @@ export default function CropScreen() {
   const [processing, setProcessing] = useState(false)
   const [rotation, setRotation] = useState(0)
   
-  // Crop Box state
-  const boxWidth = useSharedValue(SCREEN_WIDTH - 40)
-  const boxHeight = useSharedValue(SCREEN_WIDTH - 40)
-  const savedBoxWidth = useSharedValue(SCREEN_WIDTH - 40)
-  const savedBoxHeight = useSharedValue(SCREEN_WIDTH - 40)
-  
-  const translateX = useSharedValue(0)
-  const translateY = useSharedValue(0)
-  const savedTranslateX = useSharedValue(0)
-  const savedTranslateY = useSharedValue(0)
+  // Image sizing math
+  const [intrinsicSize, setIntrinsicSize] = useState({ width: 1, height: 1 })
+  const decodedUri = uri ? decodeURIComponent(uri) : ""
 
-  // Reset rotation
+  useEffect(() => {
+    if (decodedUri) {
+      Image.getSize(decodedUri, (w, h) => {
+        setIntrinsicSize({ width: w, height: h })
+      })
+    }
+  }, [decodedUri])
+
+  // Calculate rendered dimensions of the image inside the container
+  const containerRatio = SCREEN_WIDTH / CROP_AREA_HEIGHT
+  const imageRatio = intrinsicSize.width / intrinsicSize.height
+  
+  let renderWidth = SCREEN_WIDTH
+  let renderHeight = CROP_AREA_HEIGHT
+  if (imageRatio > containerRatio) {
+    renderWidth = SCREEN_WIDTH
+    renderHeight = SCREEN_WIDTH / imageRatio
+  } else {
+    renderHeight = CROP_AREA_HEIGHT
+    renderWidth = CROP_AREA_HEIGHT * imageRatio
+  }
+
+  // The center offsets of the image in the container
+  const offsetX = (SCREEN_WIDTH - renderWidth) / 2
+  const offsetY = (CROP_AREA_HEIGHT - renderHeight) / 2
+
+  // Initial Box state - start it in the middle of the image
+  const initialBoxSize = Math.min(renderWidth, renderHeight) * 0.8
+  const initialBoxX = offsetX + (renderWidth - initialBoxSize) / 2
+  const initialBoxY = offsetY + (renderHeight - initialBoxSize) / 2
+
+  const boxWidth = useSharedValue(initialBoxSize)
+  const boxHeight = useSharedValue(initialBoxSize)
+  const savedBoxWidth = useSharedValue(initialBoxSize)
+  const savedBoxHeight = useSharedValue(initialBoxSize)
+  
+  const translateX = useSharedValue(initialBoxX)
+  const translateY = useSharedValue(initialBoxY)
+  const savedTranslateX = useSharedValue(initialBoxX)
+  const savedTranslateY = useSharedValue(initialBoxY)
+
   const handleRotate = () => {
     setRotation((prev) => (prev + 90) % 360)
   }
 
-  // --- Gestures for pushing/pulling the crop box edges ---
+  // --- Gestures for pushing/pulling the crop box edges --- //
 
   // Bottom Right corner resize
   const brResizeGesture = Gesture.Pan()
@@ -46,8 +80,11 @@ export default function CropScreen() {
       savedBoxHeight.value = boxHeight.value
     })
     .onUpdate((e) => {
-      boxWidth.value = Math.max(MIN_CROP_SIZE, savedBoxWidth.value + e.translationX)
-      boxHeight.value = Math.max(MIN_CROP_SIZE, savedBoxHeight.value + e.translationY)
+      const newWidth = Math.max(MIN_CROP_SIZE, savedBoxWidth.value + e.translationX)
+      const newHeight = Math.max(MIN_CROP_SIZE, savedBoxHeight.value + e.translationY)
+      // Constrain to right/bottom edges
+      boxWidth.value = Math.min(newWidth, SCREEN_WIDTH - translateX.value - offsetX)
+      boxHeight.value = Math.min(newHeight, CROP_AREA_HEIGHT - translateY.value - offsetY)
     })
 
   // Top Left corner resize
@@ -59,34 +96,37 @@ export default function CropScreen() {
       savedTranslateY.value = translateY.value
     })
     .onUpdate((e) => {
-      // Only allow resizing down to minimum size
       const newWidth = savedBoxWidth.value - e.translationX
       const newHeight = savedBoxHeight.value - e.translationY
       
-      if (newWidth > MIN_CROP_SIZE) {
+      if (newWidth > MIN_CROP_SIZE && (savedTranslateX.value + e.translationX >= offsetX)) {
         boxWidth.value = newWidth
         translateX.value = savedTranslateX.value + e.translationX
       }
-      
-      if (newHeight > MIN_CROP_SIZE) {
+      if (newHeight > MIN_CROP_SIZE && (savedTranslateY.value + e.translationY >= offsetY)) {
         boxHeight.value = newHeight
         translateY.value = savedTranslateY.value + e.translationY
       }
     })
 
-  // Center pan (moves the whole box)
+  // Center pan (moves the whole box constraint mapped to image constraints)
   const panGesture = Gesture.Pan()
     .onStart(() => {
       savedTranslateX.value = translateX.value
       savedTranslateY.value = translateY.value
     })
     .onUpdate((e) => {
-      translateX.value = savedTranslateX.value + e.translationX
-      translateY.value = savedTranslateY.value + e.translationY
+      let newX = savedTranslateX.value + e.translationX
+      let newY = savedTranslateY.value + e.translationY
+      
+      // Keep box inside image rendered bounds
+      newX = Math.max(offsetX, Math.min(newX, offsetX + renderWidth - boxWidth.value))
+      newY = Math.max(offsetY, Math.min(newY, offsetY + renderHeight - boxHeight.value))
+      
+      translateX.value = newX
+      translateY.value = newY
     })
 
-  // --- Animated Styles ---
-  
   const cropBoxStyle = useAnimatedStyle(() => ({
     width: boxWidth.value,
     height: boxHeight.value,
@@ -104,13 +144,35 @@ export default function CropScreen() {
     if (!uri) return
     setProcessing(true)
     try {
-      // This fallback manipulates rotation and simply drops the compression for now.
-      // Accurate arbitrary intrinsic JS cropping requires native module hooks,
-      // so we use manip async to fulfill the promise chain before returning.
+      // Scale coordinates from rendered screen pixels to intrinsic native pixels
+      const scaleX = intrinsicSize.width / renderWidth
+      const scaleY = intrinsicSize.height / renderHeight
+
+      // Calculate the final bounding box relative to the image itself
+      const cropX = (translateX.value - offsetX) * scaleX
+      const cropY = (translateY.value - offsetY) * scaleY
+      const cropW = boxWidth.value * scaleX
+      const cropH = boxHeight.value * scaleY
+
+      // Execute exactly how standard native uCrop works
+      const actions: ImageManipulator.Action[] = []
+      if (rotation !== 0) {
+        actions.push({ rotate: rotation })
+      }
+      
+      actions.push({
+        crop: {
+          originX: Math.max(0, Math.round(cropX)),
+          originY: Math.max(0, Math.round(cropY)),
+          width: Math.min(intrinsicSize.width, Math.round(cropW)),
+          height: Math.min(intrinsicSize.height, Math.round(cropH)),
+        }
+      })
+
       const finalUri = await ImageManipulator.manipulateAsync(
-        decodeURIComponent(uri),
-        [{ rotate: rotation }],
-        { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
+        decodedUri,
+        actions,
+        { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG }
       )
       
       router.replace({
@@ -120,7 +182,7 @@ export default function CropScreen() {
 
     } catch (e) {
       console.error("Cropping failed", e)
-      alert("Failed to crop image")
+      alert("Failed to crop image mathematically.")
     } finally {
       setProcessing(false)
     }
@@ -136,8 +198,6 @@ export default function CropScreen() {
       </View>
     )
   }
-
-  const decodedUri = decodeURIComponent(uri)
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -159,27 +219,27 @@ export default function CropScreen() {
             <Image source={{ uri: decodedUri }} style={styles.image} resizeMode="contain" />
           </Animated.View>
 
-          {/* Dynamic Scrim & Mask */}
+          {/* Dynamic Interactive Crop Box */}
           <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none">
             <Animated.View style={[styles.cropBoxWrapper, cropBoxStyle]}>
               <GestureDetector gesture={panGesture}>
-                <View style={StyleSheet.absoluteFillObject}>
+                <Animated.View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'transparent' }]}>
                   {/* The visible crop window border */}
                   <View style={styles.cropBoxLines} />
-                </View>
+                </Animated.View>
               </GestureDetector>
               
               {/* Corner Handles for resizing */}
               <GestureDetector gesture={tlResizeGesture}>
-                <View style={[styles.cornerHandle, { top: -10, left: -10 }]} >
+                <Animated.View style={[styles.cornerHandle, { top: -20, left: -20 }]} hitSlop={{top: 30, right: 30, bottom: 30, left: 30}}>
                   <View style={styles.cornerTL} />
-                </View>
+                </Animated.View>
               </GestureDetector>
               
               <GestureDetector gesture={brResizeGesture}>
-                <View style={[styles.cornerHandle, { bottom: -10, right: -10 }]}>
+                <Animated.View style={[styles.cornerHandle, { bottom: -20, right: -20 }]} hitSlop={{top: 30, right: 30, bottom: 30, left: 30}}>
                    <View style={styles.cornerBR} />
-                </View>
+                </Animated.View>
               </GestureDetector>
             </Animated.View>
           </View>
@@ -223,7 +283,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: { color: "#ffffff", fontSize: FontSize.lg, fontFamily: FontFamily.bold },
   iconBtn: { padding: 8 },
-  cropArea: { flex: 1, justifyContent: "center", alignItems: "center", overflow: "hidden" },
+  cropArea: { height: CROP_AREA_HEIGHT, justifyContent: "center", alignItems: "center", overflow: "hidden" },
   imageContainer: {
     width: SCREEN_WIDTH, height: "100%",
     justifyContent: "center", alignItems: "center",
@@ -233,11 +293,9 @@ const styles = StyleSheet.create({
   // Crop Box overlays
   cropBoxWrapper: {
     position: 'absolute',
-    top: SCREEN_HEIGHT / 2 - (SCREEN_WIDTH - 40) / 2 - 80,
-    left: 20,
     borderWidth: 2,
     borderColor: '#ffffff',
-    backgroundColor: 'rgba(255,255,255,0.05)', // slight tint to show it's active
+    backgroundColor: 'rgba(255,255,255,0.05)', 
   },
   cropBoxLines: {
     flex: 1,
@@ -246,14 +304,15 @@ const styles = StyleSheet.create({
   },
   cornerHandle: {
     position: 'absolute', width: 40, height: 40,
-    justifyContent: 'center', alignItems: 'center', zIndex: 20
+    justifyContent: 'center', alignItems: 'center', zIndex: 20,
+    backgroundColor: "transparent"
   },
-  cornerTL: { position: "absolute", top: 10, left: 10, width: 20, height: 20, borderTopWidth: 4, borderLeftWidth: 4, borderColor: "#ffffff" },
-  cornerBR: { position: "absolute", bottom: 10, right: 10, width: 20, height: 20, borderBottomWidth: 4, borderRightWidth: 4, borderColor: "#ffffff" },
+  cornerTL: { position: "absolute", top: 18, left: 18, width: 20, height: 20, borderTopWidth: 4, borderLeftWidth: 4, borderColor: "#ffffff" },
+  cornerBR: { position: "absolute", bottom: 18, right: 18, width: 20, height: 20, borderBottomWidth: 4, borderRightWidth: 4, borderColor: "#ffffff" },
   
   toolbar: {
-    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    paddingHorizontal: 24, paddingTop: 16, borderTopWidth: 0.5, borderTopColor: "rgba(255,255,255,0.2)",
+    flex: 1, flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+    paddingHorizontal: 24, borderTopWidth: 0.5, borderTopColor: "rgba(255,255,255,0.2)",
     backgroundColor: "#000000",
   },
   toolbarBtn: { paddingVertical: 12, paddingHorizontal: 16 },
