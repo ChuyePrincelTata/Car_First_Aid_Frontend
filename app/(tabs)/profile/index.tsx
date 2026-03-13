@@ -3,6 +3,7 @@
 import React from "react"
 import { StyleSheet, Text, View, TouchableOpacity, Image, ScrollView, Alert, TextInput } from "react-native"
 import { useTheme } from "@/context/ThemeContext"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useAuth } from "@/context/AuthContext"
 
 type MechanicInfo = {
@@ -34,12 +35,14 @@ import {
   HelpCircle,
   MapPin,
   Phone,
+  ChevronLeft,
 } from "@/components/SafeLucide"
 
 const ProfileScreen: React.FC = () => {
   const { user, signOut } = useAuth() as { user: User; signOut: () => Promise<void> }
   const { colors, theme, toggleTheme } = useTheme()
   const router = useRouter()
+  const insets = useSafeAreaInsets()
   const [editMode, setEditMode] = React.useState(false)
   const [mechanicInfo, setMechanicInfo] = React.useState({
     address: user?.mechanicInfo?.address || "",
@@ -75,11 +78,20 @@ const ProfileScreen: React.FC = () => {
       backgroundColor: theme === "light" ? "#f0f8ff" : colors.background,
     },
     header: {
-      paddingTop: 60,
+      paddingTop: insets.top + 24,
       paddingHorizontal: 24,
       paddingBottom: 24,
       alignItems: "center",
       backgroundColor: theme === "light" ? "#e3f2fd" : colors.card,
+    },
+    backBtn: {
+      position: "absolute",
+      top: insets.top + 24,
+      left: 24,
+      width: 40, height: 40, borderRadius: 20,
+      backgroundColor: theme === "light" ? "#ffffff" : colors.background,
+      alignItems: "center", justifyContent: "center",
+      zIndex: 10,
     },
     profileImage: {
       width: 100,
@@ -212,6 +224,12 @@ const ProfileScreen: React.FC = () => {
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backBtn} 
+            onPress={() => router.canGoBack() ? router.back() : router.replace("/(tabs)")}
+          >
+            <ChevronLeft size={24} color={colors.text} />
+          </TouchableOpacity>
           <Image
             source={{ uri: "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg" }}
             style={styles.profileImage}

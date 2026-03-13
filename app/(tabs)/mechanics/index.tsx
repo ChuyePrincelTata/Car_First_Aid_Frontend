@@ -3,14 +3,16 @@
 import { useState } from "react"
 import { StyleSheet, Text, View, FlatList, TouchableOpacity, Image, TextInput } from "react-native"
 import { useTheme } from "@/context/ThemeContext"
-import { Search, Star, MapPin, MessageSquare, CheckCircle } from "@/components/SafeLucide"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { Search, Star, MapPin, MessageSquare, CheckCircle, ChevronLeft } from "@/components/SafeLucide"
 import { useRouter } from "expo-router"
 import React from "react"
 import { Mechanic, mockMechanics } from "@/data/mockData"
 
 export default function MechanicsScreen() {
-  const { colors } = useTheme()
+  const { colors, theme } = useTheme()
   const router = useRouter()
+  const insets = useSafeAreaInsets()
   const [searchQuery, setSearchQuery] = useState("")
   const [mechanics, setMechanics] = useState(mockMechanics)
 
@@ -29,9 +31,15 @@ export default function MechanicsScreen() {
       backgroundColor: colors.background,
     },
     header: {
-      paddingTop: 16,
+      paddingTop: insets.top + 24,
       paddingHorizontal: 24,
       paddingBottom: 20,
+    },
+    backBtn: {
+      width: 40, height: 40, borderRadius: 20,
+      backgroundColor: theme === "dark" ? colors.card : "#f1f5f9",
+      alignItems: "center", justifyContent: "center",
+      marginBottom: 12,
     },
     title: {
       fontSize: 28,
@@ -238,6 +246,12 @@ export default function MechanicsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backBtn} 
+          onPress={() => router.canGoBack() ? router.back() : router.replace("/(tabs)")}
+        >
+          <ChevronLeft size={24} color={colors.text} />
+        </TouchableOpacity>
         <Text style={styles.title}>Find a Mechanic</Text>
         <View style={styles.searchContainer}>
           <Search size={20} color={colors.tabIconDefault} style={styles.searchIcon} />

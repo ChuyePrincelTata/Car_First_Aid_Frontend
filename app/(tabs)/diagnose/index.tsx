@@ -3,7 +3,7 @@ import {
   StyleSheet, Text, View, TouchableOpacity, Image,
   ActivityIndicator, ScrollView, Dimensions,
 } from "react-native"
-import { Camera, Upload } from "@/components/SafeLucide"
+import { Camera, Upload, ChevronLeft } from "@/components/SafeLucide"
 import { useTheme } from "@/context/ThemeContext"
 import { CameraView } from "expo-camera"
 import * as ImagePicker from "expo-image-picker"
@@ -52,7 +52,8 @@ export default function DiagnoseScreen() {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: false, // Disabled: prevents the ugly crop overlay
+        allowsEditing: true, // Native OS cropper for best UX
+        // No fixed 'aspect' ratio so user can crop freely or keep original
         quality: 1,
       })
       if (!result.canceled && result.assets && result.assets.length > 0) {
@@ -115,9 +116,16 @@ export default function DiagnoseScreen() {
     container:      { flex: 1, backgroundColor: colors.background },
     // ─── Header ─────────────────────────────────────────────────────────────
     header: {
-      paddingTop: insets.top + 12,
+      paddingTop: insets.top + 24, // increased padding for breathing room
       paddingHorizontal: Spacing.xl,
       paddingBottom: Spacing.md,
+    },
+    backBtn: {
+      width: 40, height: 40,
+      borderRadius: 20,
+      backgroundColor: isDark ? colors.card : "#f1f5f9",
+      alignItems: "center", justifyContent: "center",
+      marginBottom: Spacing.sm,
     },
     title: {
       fontSize: FontSize.xl,
@@ -152,7 +160,7 @@ export default function DiagnoseScreen() {
     imagePreview: {
       width: "100%",
       height: "100%",
-      resizeMode: "cover",
+      resizeMode: "contain", // show full image without forced cropping
     },
     uploadIconWrap: {
       width: 64,
@@ -383,11 +391,24 @@ export default function DiagnoseScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backBtn} 
+          onPress={() => router.canGoBack() ? router.back() : router.replace("/(tabs)")}
+        >
+          <ChevronLeft size={24} color={colors.text} />
+        </TouchableOpacity>
         <Text style={styles.title}>Dashboard Diagnosis</Text>
         <Text style={styles.subtitle}>Snap or upload a photo of your warning lights</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 48 }}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false} 
+        contentContainerStyle={{ 
+          flexGrow: 1, 
+          paddingBottom: 48,
+          justifyContent: image ? "flex-start" : "center" // Vertically center when empty
+        }}
+      >
 
         {/* Upload / Preview Area */}
         <View style={[styles.uploadArea, image && styles.uploadAreaFilled]}>

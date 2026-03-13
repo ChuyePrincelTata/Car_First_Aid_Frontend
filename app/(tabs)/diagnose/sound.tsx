@@ -3,10 +3,11 @@ import {
   StyleSheet, Text, View, TouchableOpacity,
   ActivityIndicator, ScrollView,
 } from "react-native"
-import { Mic, Pause, Play, StopCircle } from "@/components/SafeLucide"
+import { Mic, Pause, Play, StopCircle, ChevronLeft } from "@/components/SafeLucide"
 import { Audio } from "expo-av"
 import { useTheme } from "@/context/ThemeContext"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { useRouter } from "expo-router"
 import { FontFamily, FontSize, Spacing, Radius } from "@/constants/Theme"
 import Animated, {
   useSharedValue, useAnimatedStyle,
@@ -17,6 +18,7 @@ import React from "react"
 type VideoLink = { title: string; url: string }
 
 export default function SoundDiagnosisScreen() {
+  const router = useRouter()
   const [recording, setRecording] = useState<Audio.Recording | null>(null)
   const [sound, setSound] = useState<Audio.Sound | null>(null)
   const [isRecording, setIsRecording] = useState(false)
@@ -141,7 +143,13 @@ export default function SoundDiagnosisScreen() {
     container: { flex: 1, backgroundColor: colors.background },
     center: { flex: 1, justifyContent: "center", alignItems: "center" },
     loadingText: { marginTop: Spacing.md, fontSize: FontSize.md, fontFamily: FontFamily.medium, color: colors.text },
-    header: { paddingTop: insets.top + 12, paddingHorizontal: Spacing.xl, paddingBottom: Spacing.sm },
+    header: { paddingTop: insets.top + 24, paddingHorizontal: Spacing.xl, paddingBottom: Spacing.sm },
+    backBtn: {
+      width: 40, height: 40, borderRadius: 20,
+      backgroundColor: isDark ? colors.card : "#f1f5f9",
+      alignItems: "center", justifyContent: "center",
+      marginBottom: Spacing.sm,
+    },
     title: { fontSize: FontSize.xl, fontFamily: FontFamily.bold, color: colors.text, letterSpacing: -0.5 },
     subtitle: { fontSize: FontSize.sm, fontFamily: FontFamily.regular, color: colors.tabIconDefault, marginTop: 2 },
 
@@ -240,11 +248,24 @@ export default function SoundDiagnosisScreen() {
   return (
     <View style={s.container}>
       <View style={s.header}>
+        <TouchableOpacity 
+          style={s.backBtn} 
+          onPress={() => router.canGoBack() ? router.back() : router.replace("/(tabs)")}
+        >
+          <ChevronLeft size={24} color={colors.text} />
+        </TouchableOpacity>
         <Text style={s.title}>Sound Diagnosis</Text>
         <Text style={s.subtitle}>Record unusual engine sounds for AI analysis</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 48 }}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false} 
+        contentContainerStyle={{ 
+          flexGrow: 1, 
+          paddingBottom: 48,
+          justifyContent: recordingUri ? "flex-start" : "center"
+        }}
+      >
         {/* Recorder card */}
         <View style={s.recorderWrap}>
           {/* Waveform — only shown while recording */}

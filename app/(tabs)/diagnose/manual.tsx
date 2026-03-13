@@ -4,14 +4,16 @@ import {
   TouchableOpacity, ScrollView, ActivityIndicator,
 } from "react-native"
 import { useTheme } from "@/context/ThemeContext"
-import { AlertTriangle, Play } from "@/components/SafeLucide"
+import { AlertTriangle, Play, ChevronLeft } from "@/components/SafeLucide"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { useRouter } from "expo-router"
 import { FontFamily, FontSize, Spacing, Radius } from "@/constants/Theme"
 import React from "react"
 
 type VideoLink = { title: string; url: string }
 
 export default function ManualDiagnosisScreen() {
+  const router = useRouter()
   const [description, setDescription] = useState("")
   const [symptoms, setSymptoms] = useState("")
   const [diagnosing, setDiagnosing] = useState(false)
@@ -60,9 +62,15 @@ export default function ManualDiagnosisScreen() {
     loadingText: { marginTop: Spacing.md, fontSize: FontSize.md, fontFamily: FontFamily.medium, color: colors.text },
 
     // Header
-    header: { paddingTop: insets.top + 12, paddingHorizontal: Spacing.xl, paddingBottom: Spacing.sm },
+    header: { paddingTop: insets.top + 24, paddingHorizontal: Spacing.xl, paddingBottom: Spacing.sm },
     title: { fontSize: FontSize.xl, fontFamily: FontFamily.bold, color: colors.text, letterSpacing: -0.5 },
     subtitle: { fontSize: FontSize.sm, fontFamily: FontFamily.regular, color: colors.tabIconDefault, marginTop: 2 },
+    backBtn: {
+      width: 40, height: 40, borderRadius: 20,
+      backgroundColor: isDark ? colors.card : "#f1f5f9",
+      alignItems: "center", justifyContent: "center",
+      marginBottom: Spacing.sm,
+    },
 
     // Form
     formCard: {
@@ -155,11 +163,24 @@ export default function ManualDiagnosisScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backBtn} 
+          onPress={() => router.canGoBack() ? router.back() : router.replace("/(tabs)")}
+        >
+          <ChevronLeft size={24} color={colors.text} />
+        </TouchableOpacity>
         <Text style={styles.title}>Manual Diagnosis</Text>
         <Text style={styles.subtitle}>Describe your car problems in detail</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 48 }}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false} 
+        contentContainerStyle={{ 
+          flexGrow: 1, 
+          paddingBottom: 48,
+          justifyContent: diagnosisResult ? "flex-start" : "center" 
+        }}
+      >
 
         {/* Input form */}
         {!diagnosisResult && (

@@ -3,14 +3,16 @@
 import { useState } from "react"
 import { StyleSheet, Text, View, FlatList, TouchableOpacity } from "react-native"
 import { useTheme } from "@/context/ThemeContext"
-import { AlertCircle, Camera, Mic, Calendar, ChevronRight, History as HistoryIcon } from "@/components/SafeLucide"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { AlertCircle, Camera, Mic, Calendar, ChevronRight, History as HistoryIcon, ChevronLeft } from "@/components/SafeLucide"
 import { useRouter } from "expo-router"
 import React from "react"
 import { DiagnosisHistory, mockHistory } from "@/data/mockData"
 
 export default function HistoryScreen() {
-  const { colors } = useTheme()
+  const { colors, theme } = useTheme()
   const router = useRouter()
+  const insets = useSafeAreaInsets()
   const [history, setHistory] = useState<DiagnosisHistory[]>(mockHistory)
   const [filter, setFilter] = useState<"all" | "unresolved" | "resolved">("all")
 
@@ -40,9 +42,15 @@ export default function HistoryScreen() {
       backgroundColor: colors.background,
     },
     header: {
-      paddingTop: 60,
+      paddingTop: insets.top + 24,
       paddingHorizontal: 24,
       paddingBottom: 20,
+    },
+    backBtn: {
+      width: 40, height: 40, borderRadius: 20,
+      backgroundColor: theme === "dark" ? colors.card : "#f1f5f9",
+      alignItems: "center", justifyContent: "center",
+      marginBottom: 12,
     },
     title: {
       fontSize: 28,
@@ -258,6 +266,12 @@ export default function HistoryScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backBtn} 
+          onPress={() => router.canGoBack() ? router.back() : router.replace("/(tabs)")}
+        >
+          <ChevronLeft size={24} color={colors.text} />
+        </TouchableOpacity>
         <Text style={styles.title}>Diagnosis History</Text>
       </View>
 
