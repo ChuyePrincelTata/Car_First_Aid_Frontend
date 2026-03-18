@@ -8,7 +8,6 @@ import { AuthProvider, useAuth } from "@/context/AuthContext"
 import { ThemeProvider, useTheme } from "@/context/ThemeContext"
 import { DiagnosticsProvider } from "@/context/DiagnosticsContext"
 import { NotificationsProvider } from "@/context/NotificationsContext"
-import { TabBarProvider } from "@/context/TabBarContext"
 import React from "react"
 
 // Controls the device status bar (time, battery, etc.) based on the current theme
@@ -113,17 +112,15 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider>
-      <TabBarProvider>
-        <AuthProvider>
-          <DiagnosticsProvider>
-            <NotificationsProvider>
-              <AppErrorBoundary>
-                <AppContent />
-              </AppErrorBoundary>
-            </NotificationsProvider>
-          </DiagnosticsProvider>
-        </AuthProvider>
-      </TabBarProvider>
+      <AuthProvider>
+        <DiagnosticsProvider>
+          <NotificationsProvider>
+            <AppErrorBoundary>
+              <AppContent />
+            </AppErrorBoundary>
+          </NotificationsProvider>
+        </DiagnosticsProvider>
+      </AuthProvider>
     </ThemeProvider>
   )
 }

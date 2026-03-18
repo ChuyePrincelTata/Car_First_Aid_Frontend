@@ -12,7 +12,6 @@ import {
 import { useRouter } from "expo-router"
 import { Mechanic, mockMechanics } from "@/data/mockData"
 import { FontFamily, FontSize } from "@/constants/Theme"
-import { useTabBarScroll } from "@/context/TabBarContext"
 
 const GOLD = "#F59E0B"
 
@@ -23,15 +22,10 @@ export default function MechanicsScreen() {
   const [searchQuery,    setSearchQuery]    = useState("")
   const [isSearchVisible, setIsSearchVisible] = useState(false)
 
-  // ── Shared tab bar scroll handler ──────────────────────────────────────────
-  const { tabBarOnScroll } = useTabBarScroll()
-
-  // ── Local collapsing header ────────────────────────────────────────────────
+  // Header collapse driven by scrollY
   const scrollY = useRef(new Animated.Value(0)).current
-
-  // Header height: safe area top + compact bar (~52px)
   const HEADER_H = insets.top + 52
-  const SEARCH_H = 56 // extra height when search bar is open
+  const SEARCH_H = 56
 
   const headerTranslateY = scrollY.interpolate({
     inputRange:  [0, HEADER_H],
@@ -39,13 +33,9 @@ export default function MechanicsScreen() {
     extrapolate: "clamp",
   })
 
-  // Combined scroll handler: updates scrollY (for header) + tab bar context
   const handleScroll = Animated.event(
     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-    {
-      useNativeDriver: false,   // must be false because we also call a JS listener
-      listener: tabBarOnScroll,
-    }
+    { useNativeDriver: false }
   )
 
   // ── Data ───────────────────────────────────────────────────────────────────
