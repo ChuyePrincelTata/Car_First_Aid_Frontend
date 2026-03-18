@@ -4,8 +4,9 @@ import { useState } from "react"
 import { StyleSheet, Text, View, FlatList, TouchableOpacity } from "react-native"
 import { useTheme } from "@/context/ThemeContext"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { AlertCircle, Camera, Mic, Calendar, ChevronRight, History as HistoryIcon, ChevronLeft } from "@/components/SafeLucide"
+import { AlertCircle, Camera, Mic, Calendar, ChevronRight, History as HistoryIcon } from "@/components/SafeLucide"
 import { useRouter } from "expo-router"
+import ScreenHeader, { SCREEN_HEADER_H } from "@/components/ScreenHeader"
 import React from "react"
 import { DiagnosisHistory, mockHistory } from "@/data/mockData"
 import { FontFamily, FontSize } from "@/constants/Theme"
@@ -267,19 +268,12 @@ export default function HistoryScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <TouchableOpacity 
-            style={styles.backBtn} 
-            onPress={() => router.canGoBack() ? router.back() : router.replace("/(tabs)")}
-          >
-            <ChevronLeft size={24} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={styles.title}>Diagnosis History</Text>
-        </View>
-      </View>
+      <ScreenHeader 
+        title="Diagnosis History" 
+        onBack={() => router.canGoBack() ? router.back() : router.replace("/(tabs)")} 
+      />
 
-      <View style={styles.filterContainer}>
+      <View style={[styles.filterContainer, { paddingTop: insets.top + SCREEN_HEADER_H + 16 }]}>
         <TouchableOpacity
           style={[styles.filterButton, filter === "all" ? styles.activeFilter : styles.inactiveFilter]}
           onPress={() => setFilter("all")}

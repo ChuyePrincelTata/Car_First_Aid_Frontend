@@ -3,8 +3,9 @@ import {
   StyleSheet, Text, View, TouchableOpacity, Image,
   ActivityIndicator, ScrollView, Dimensions,
 } from "react-native"
-import { Camera, Upload, ChevronLeft } from "@/components/SafeLucide"
+import { Camera, Upload } from "@/components/SafeLucide"
 import { useTheme } from "@/context/ThemeContext"
+import ScreenHeader, { SCREEN_HEADER_H } from "@/components/ScreenHeader"
 import * as ImagePicker from "expo-image-picker"
 import { useRouter } from "expo-router"
 import { getApiBaseUrl } from "@/utils/apiConfig"
@@ -307,28 +308,21 @@ export default function DiagnoseScreen() {
   // ─── Main screen ─────────────────────────────────────────────────────────
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <TouchableOpacity 
-            style={styles.backBtn} 
-            onPress={() => router.canGoBack() ? router.back() : router.replace("/(tabs)")}
-          >
-            <ChevronLeft size={24} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={styles.title}>Dashboard Diagnosis</Text>
-        </View>
-        <Text style={styles.subtitle}>Snap or upload a photo of your warning lights</Text>
-      </View>
+      <ScreenHeader 
+        title="Dashboard Diagnosis" 
+        onBack={() => router.canGoBack() ? router.back() : router.replace("/(tabs)")} 
+      />
 
       <ScrollView 
         showsVerticalScrollIndicator={false} 
         contentContainerStyle={{ 
           flexGrow: 1, 
+          paddingTop: insets.top + SCREEN_HEADER_H + Spacing.md,
           paddingBottom: 48,
           justifyContent: diagnosisResult ? "flex-start" : "center" // Vertically center broadly
         }}
       >
+        <Text style={[styles.subtitle, { textAlign: "center", marginBottom: Spacing.md }]}>Snap or upload a photo of your warning lights</Text>
 
         {/* Upload / Preview Area */}
         <View style={[

@@ -35,9 +35,9 @@ import {
   HelpCircle,
   MapPin,
   Phone,
-  ChevronLeft,
 } from "@/components/SafeLucide"
 import { FontFamily, FontSize } from "@/constants/Theme"
+import ScreenHeader, { SCREEN_HEADER_H } from "@/components/ScreenHeader"
 
 const ProfileScreen: React.FC = () => {
   const { user, signOut } = useAuth() as { user: User; signOut: () => Promise<void> }
@@ -224,14 +224,15 @@ const ProfileScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.backBtn} 
-            onPress={() => router.canGoBack() ? router.back() : router.replace("/(tabs)")}
-          >
-            <ChevronLeft size={24} color={colors.text} />
-          </TouchableOpacity>
+      <ScreenHeader 
+        title="Profile" 
+        onBack={() => router.canGoBack() ? router.back() : router.replace("/(tabs)")} 
+      />
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingTop: insets.top + SCREEN_HEADER_H + 16 }}
+      >
+        <View style={[styles.header, { paddingTop: 0 }]}>
           <Image
             source={{ uri: "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg" }}
             style={styles.profileImage}
