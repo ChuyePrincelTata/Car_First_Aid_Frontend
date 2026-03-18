@@ -196,6 +196,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="mechanics/[id]"
+        options={{
+          title: "Mechanic Profile",
+          href: null,
+          tabBarStyle: { display: "none" },
+          headerShown: false,
+        }}
+      />
+      <Tabs.Screen
         name="history/index"
         options={{
           title: "History",

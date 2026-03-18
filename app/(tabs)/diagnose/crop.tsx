@@ -7,7 +7,7 @@ import { FontFamily, FontSize } from "@/constants/Theme"
 import { useTheme } from "@/context/ThemeContext"
 import * as ImageManipulator from "expo-image-manipulator"
 import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler"
-import Animated, { useSharedValue, useAnimatedStyle, runOnJS } from "react-native-reanimated"
+import Animated, { useSharedValue, useAnimatedStyle } from "react-native-reanimated"
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window")
 const CROP_AREA_HEIGHT = SCREEN_HEIGHT * 0.7
