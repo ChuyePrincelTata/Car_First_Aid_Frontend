@@ -1,60 +1,83 @@
 /**
  * context/TabBarContext.tsx
  *
- * Provides a shared Animated.Value that screens can drive via their FlatList's
- * onScroll handler to hide/show the bottom tab bar as the user scrolls.
+ * Provides a shared Animated.Value (0=visible, 1=hidden) that the CustomTabBar
+ * reads to translate itself off-screen when the user scrolls down, and back into
+ * view when they scroll back up.
  *
- * Usage in any screen:
- *   const { onScrollHandler, tabBarAnimatedStyle } = useTabBarScroll()
- *   <Animated.FlatList onScroll={onScrollHandler} scrollEventThrottle={16} … />
+ * Usage in any list screen:
+ *   const { tabBarOnScroll } = useTabBarScroll()
  *
- * CustomTabBar reads `useTabBarTranslateY()` to apply the transform.
+ *   // If you ALSO need the header to collapse, combine with your own scrollY:
+ *   const scrollHandler = Animated.event(
+ *     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+ *     { useNativeDriver: false, listener: tabBarOnScroll }
+ *   )
  */
 import React, { createContext, useContext, useRef } from "react"
 import { Animated } from "react-native"
 
-const TAB_BAR_HIDE_OFFSET = 80 // scroll this many px down before hiding
-
-interface TabBarContextValue {
+interface TabBarCtxValue {
   translateY: Animated.Value
 }
 
-const TabBarContext = createContext<TabBarContextValue>({
+const Ctx = createContext<TabBarCtxValue>({
   translateY: new Animated.Value(0),
 })
 
 export function TabBarProvider({ children }: { children: React.ReactNode }) {
   const translateY = useRef(new Animated.Value(0)).current
-  return (
-    <TabBarContext.Provider value={{ translateY }}>
-      {children}
-    </TabBarContext.Provider>
-  )
+  return <Ctx.Provider value={{ translateY }}>{children}</Ctx.Provider>
 }
 
-/** Call this in any screen that wants to hide the tab bar while scrolling. */
-export function useTabBarScroll() {
-  const { translateY } = useContext(TabBarContext)
-
-  const onScrollHandler = Animated.event(
-    [{ nativeEvent: { contentOffset: { y: new Animated.Value(0) } } }],
-    {
-      useNativeDriver: false,
-      listener: (event: any) => {
-        const y: number = event.nativeEvent.contentOffset.y
-        Animated.timing(translateY, {
-          toValue: y > TAB_BAR_HIDE_OFFSET ? 1 : 0,
-          duration: 200,
-          useNativeDriver: false,
-        }).start()
-      },
-    }
-  )
-
-  return { onScrollHandler }
-}
-
-/** Read by CustomTabBar to apply the animated transform. */
+/** Read by CustomTabBar to animate the bar on/off screen. */
 export function useTabBarTranslateY() {
-  return useContext(TabBarContext).translateY
+  return useContext(Ctx).translateY
+}
+
+/**
+ * Returns `tabBarOnScroll` — a plain JS function suitable for use as the
+ * `listener` prop of Animated.event or as a direct onScroll handler.
+ *
+ * Hides the bar when scrolling DOWN past 10px, shows it when scrolling UP.
+ */
+export function useTabBarScroll() {
+  const { translateY } = useContext(Ctx)
+  const lastY = useRef(0)
+
+  // Stable function reference via useRef so it won't change on re-renders
+  const tabBarOnScroll = useRef((event: any) => {
+    const y: number = event.nativeEvent.contentOffset.y
+    const delta = y - lastY.current
+    lastY.current = y
+
+    // Always show when near the top
+    if (y < 10) {
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 180,
+        useNativeDriver: false,
+      }).start()
+      return
+    }
+
+    // Scrolling down → hide
+    if (delta > 4) {
+      Animated.timing(translateY, {
+        toValue: 1,
+        duration: 180,
+        useNativeDriver: false,
+      }).start()
+    }
+    // Scrolling up → show
+    else if (delta < -4) {
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 180,
+        useNativeDriver: false,
+      }).start()
+    }
+  }).current
+
+  return { tabBarOnScroll }
 }
