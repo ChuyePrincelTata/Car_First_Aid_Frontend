@@ -9,6 +9,7 @@ import { Search, Star, MapPin, MessageSquare, CheckCircle, X, User } from "@/com
 import { useRouter } from "expo-router"
 import { Mechanic, mockMechanics } from "@/data/mockData"
 import { FontFamily, FontSize } from "@/constants/Theme"
+import { useTabBarScroll } from "@/context/TabBarContext"
 
 const HEADER_HEIGHT = 110
 const GOLD = "#F59E0B"
@@ -21,12 +22,21 @@ export default function MechanicsScreen() {
   const [isSearchVisible, setIsSearchVisible] = useState(false)
 
   const scrollY = useRef(new Animated.Value(0)).current
+  const { onScrollHandler } = useTabBarScroll()
 
   const headerTranslate = scrollY.interpolate({
     inputRange: [0, HEADER_HEIGHT],
     outputRange: [0, -HEADER_HEIGHT],
     extrapolate: "clamp",
   })
+
+  const handleScroll = Animated.event(
+    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+    {
+      useNativeDriver: false,
+      listener: onScrollHandler,
+    }
+  )
 
   const filteredMechanics = searchQuery
     ? mockMechanics.filter(
@@ -161,12 +171,12 @@ export default function MechanicsScreen() {
         data={filteredMechanics}
         keyExtractor={(item) => item.id}
         renderItem={renderMechanicItem}
-        contentContainerStyle={[styles.list, { paddingTop: isSearchVisible ? HEADER_HEIGHT + 56 : HEADER_HEIGHT }]}
+        contentContainerStyle={[
+          styles.list,
+          { paddingTop: isSearchVisible ? HEADER_HEIGHT + 56 : HEADER_HEIGHT, paddingBottom: insets.bottom + 20 }
+        ]}
         showsVerticalScrollIndicator={false}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: true }
-        )}
+        onScroll={handleScroll}
         scrollEventThrottle={16}
         ListEmptyComponent={
           <View style={styles.emptyBox}>
