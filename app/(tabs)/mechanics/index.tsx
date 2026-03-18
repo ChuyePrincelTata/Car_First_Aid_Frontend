@@ -1,7 +1,7 @@
-import React, { useState, useRef } from "react"
+import React, { useState } from "react"
 import {
   StyleSheet, Text, View, FlatList, TouchableOpacity,
-  Image, TextInput, Animated, Linking, Alert,
+  Image, TextInput, Linking, Alert,
 } from "react-native"
 import { useTheme } from "@/context/ThemeContext"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
@@ -9,34 +9,15 @@ import { Search, Star, MapPin, MessageSquare, CheckCircle, X, User } from "@/com
 import { useRouter } from "expo-router"
 import { Mechanic, mockMechanics } from "@/data/mockData"
 import { FontFamily, FontSize } from "@/constants/Theme"
-import { useTabBarScroll } from "@/context/TabBarContext"
 
-const HEADER_HEIGHT = 110
 const GOLD = "#F59E0B"
 
 export default function MechanicsScreen() {
-  const { colors, theme } = useTheme()
+  const { colors, isDark } = useTheme()
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const [searchQuery, setSearchQuery] = useState("")
   const [isSearchVisible, setIsSearchVisible] = useState(false)
-
-  const scrollY = useRef(new Animated.Value(0)).current
-  const { onScrollHandler } = useTabBarScroll()
-
-  const headerTranslate = scrollY.interpolate({
-    inputRange: [0, HEADER_HEIGHT],
-    outputRange: [0, -HEADER_HEIGHT],
-    extrapolate: "clamp",
-  })
-
-  const handleScroll = Animated.event(
-    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-    {
-      useNativeDriver: false,
-      listener: onScrollHandler,
-    }
-  )
 
   const filteredMechanics = searchQuery
     ? mockMechanics.filter(
@@ -53,26 +34,21 @@ export default function MechanicsScreen() {
     )
     const url = `whatsapp://send?phone=${mechanic.phone}&text=${msg}`
     Linking.canOpenURL(url)
-      .then((supported) => {
-        if (supported) {
-          Linking.openURL(url)
-        } else {
-          Alert.alert("WhatsApp not found", "Please install WhatsApp to message this mechanic.")
-        }
+      .then((ok) => {
+        if (ok) Linking.openURL(url)
+        else Alert.alert("WhatsApp not found", "Install WhatsApp to message this mechanic.")
       })
       .catch(() => Alert.alert("Error", "Could not open WhatsApp."))
   }
 
-  const renderStars = (rating: number) => {
-    const full = Math.floor(rating)
-    return Array.from({ length: 5 }, (_, i) => (
-      <Star key={i} size={13} color={GOLD} fill={i < full ? GOLD : "transparent"} />
+  const renderStars = (rating: number) =>
+    Array.from({ length: 5 }, (_, i) => (
+      <Star key={i} size={13} color={GOLD} fill={i < Math.floor(rating) ? GOLD : "transparent"} />
     ))
-  }
 
   const renderMechanicItem = ({ item }: { item: Mechanic }) => (
-    <View style={[styles.mechanicCard, { backgroundColor: colors.card }]}>
-      {/* Verified badge — text only, no background */}
+    <View style={[styles.card, { backgroundColor: colors.card }]}>
+      {/* Verified — text only, green, no background */}
       {item.verified && (
         <View style={styles.verifiedBadge}>
           <CheckCircle size={13} color="#22c55e" />
@@ -80,12 +56,12 @@ export default function MechanicsScreen() {
         </View>
       )}
 
-      <View style={styles.mechanicHeader}>
+      <View style={styles.cardHeader}>
         <Image source={{ uri: item.avatar }} style={styles.avatar} />
-        <View style={styles.mechanicInfo}>
-          <Text style={[styles.mechanicName, { color: colors.text }]}>{item.name}</Text>
-          <Text style={[styles.mechanicSpecialty, { color: colors.subtext }]}>{item.specialty}</Text>
-          <Text style={[styles.mechanicExperience, { color: colors.primary }]}>{item.experience}</Text>
+        <View style={styles.cardInfo}>
+          <Text style={[styles.name, { color: colors.text }]}>{item.name}</Text>
+          <Text style={[styles.specialty, { color: colors.subtext }]}>{item.specialty}</Text>
+          <Text style={[styles.exp, { color: colors.primary }]}>{item.experience}</Text>
           <View style={styles.ratingRow}>
             {renderStars(item.rating)}
             <Text style={[styles.ratingText, { color: colors.text }]}>
@@ -100,62 +76,60 @@ export default function MechanicsScreen() {
         <Text style={[styles.locationText, { color: colors.subtext }]}>{item.location}</Text>
       </View>
 
-      <View style={[styles.buttonsRow, { borderTopColor: colors.border }]}>
+      <View style={[styles.actionsRow, { borderTopColor: colors.border }]}>
         <TouchableOpacity
-          style={styles.cardBtn}
+          style={styles.actionBtn}
           onPress={() => router.push({ pathname: "/(tabs)/mechanics/[id]", params: { id: item.id } })}
         >
           <User size={16} color={colors.text} />
-          <Text style={[styles.btnText, { color: colors.text }]}>Profile</Text>
+          <Text style={[styles.actionText, { color: colors.text }]}>Profile</Text>
         </TouchableOpacity>
 
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-        <TouchableOpacity
-          style={styles.cardBtn}
-          onPress={() => openWhatsApp(item)}
-        >
+        <TouchableOpacity style={styles.actionBtn} onPress={() => openWhatsApp(item)}>
           <MessageSquare size={16} color={GOLD} />
-          <Text style={[styles.btnText, { color: GOLD }]}>Message</Text>
+          <Text style={[styles.actionText, { color: GOLD }]}>Message</Text>
         </TouchableOpacity>
       </View>
     </View>
   )
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Collapsing Header */}
-      <Animated.View
+    <View style={[styles.screen, { backgroundColor: colors.background }]}>
+      {/* ── Compact sticky header ── */}
+      {/* Just the safe area + a slim bar with search icon. Does NOT scroll. */}
+      <View
         style={[
-          styles.header,
+          styles.stickyHeader,
           {
-            paddingTop: insets.top + 12,
-            backgroundColor: theme === "dark" ? colors.card : "#ffffff",
+            paddingTop: insets.top + 6,
+            backgroundColor: isDark ? colors.card : "#fff",
             borderBottomColor: colors.border,
-            transform: [{ translateY: headerTranslate }],
           },
         ]}
       >
-        <View style={styles.headerTop}>
-          <Text style={[styles.title, { color: colors.text }]}>Find a Mechanic</Text>
-          <TouchableOpacity
-            style={styles.searchToggle}
-            onPress={() => {
-              setIsSearchVisible((v) => !v)
-              if (isSearchVisible) setSearchQuery("")
-            }}
-          >
-            {isSearchVisible
-              ? <X size={22} color={colors.text} />
-              : <Search size={22} color={colors.text} />}
-          </TouchableOpacity>
-        </View>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Mechanics</Text>
+        <TouchableOpacity
+          style={styles.searchBtn}
+          onPress={() => {
+            setIsSearchVisible((v) => !v)
+            if (isSearchVisible) setSearchQuery("")
+          }}
+        >
+          {isSearchVisible
+            ? <X size={20} color={colors.text} />
+            : <Search size={20} color={colors.text} />}
+        </TouchableOpacity>
+      </View>
 
-        {isSearchVisible && (
-          <View style={[styles.searchBar, { backgroundColor: colors.background }]}>
-            <Search size={16} color={colors.subtext} />
+      {/* Search bar appears below the sticky header when toggled */}
+      {isSearchVisible && (
+        <View style={[styles.searchBarRow, { backgroundColor: isDark ? colors.card : "#fff", borderBottomColor: colors.border }]}>
+          <View style={[styles.searchInput, { backgroundColor: isDark ? colors.background : "#f1f5f9" }]}>
+            <Search size={15} color={colors.subtext} />
             <TextInput
-              style={[styles.searchInput, { color: colors.text }]}
+              style={{ flex: 1, color: colors.text, fontFamily: FontFamily.regular, fontSize: FontSize.sm, height: 36 }}
               placeholder="Name, specialty, location…"
               placeholderTextColor={colors.subtext}
               value={searchQuery}
@@ -163,21 +137,16 @@ export default function MechanicsScreen() {
               autoFocus
             />
           </View>
-        )}
-      </Animated.View>
+        </View>
+      )}
 
-      {/* List — paddingTop offsets the header */}
-      <Animated.FlatList
+      {/* List */}
+      <FlatList
         data={filteredMechanics}
         keyExtractor={(item) => item.id}
         renderItem={renderMechanicItem}
-        contentContainerStyle={[
-          styles.list,
-          { paddingTop: isSearchVisible ? HEADER_HEIGHT + 56 : HEADER_HEIGHT, paddingBottom: insets.bottom + 20 }
-        ]}
+        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 16 }]}
         showsVerticalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
         ListEmptyComponent={
           <View style={styles.emptyBox}>
             <Search size={44} color={colors.subtext} />
@@ -192,53 +161,41 @@ export default function MechanicsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  screen: { flex: 1 },
 
-  header: {
-    position: "absolute",
-    top: 0, left: 0, right: 0,
-    zIndex: 10,
-    paddingHorizontal: 20,
-    paddingBottom: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07,
-    shadowRadius: 4,
-  },
-  headerTop: {
+  stickyHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingBottom: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  title: {
-    fontSize: FontSize.lg,
+  headerTitle: {
+    fontSize: FontSize.md,
     fontFamily: FontFamily.bold,
-    letterSpacing: -0.3,
+    letterSpacing: -0.2,
   },
-  searchToggle: { padding: 6 },
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    height: 44,
-    marginTop: 10,
+  searchBtn: { padding: 6 },
+
+  searchBarRow: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   searchInput: {
-    flex: 1,
-    fontFamily: FontFamily.regular,
-    fontSize: FontSize.sm,
-    height: 44,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
   },
 
-  list: { paddingHorizontal: 16, paddingBottom: 20 },
+  list: { paddingHorizontal: 16, paddingTop: 12 },
 
-  mechanicCard: {
+  card: {
     borderRadius: 16,
-    marginBottom: 16,
+    marginBottom: 14,
     overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -254,17 +211,14 @@ const styles = StyleSheet.create({
     top: 10, right: 10,
     zIndex: 5,
   },
-  verifiedText: {
-    color: "#22c55e",
-    fontSize: 11,
-    fontFamily: FontFamily.medium,
-  },
-  mechanicHeader: { flexDirection: "row", padding: 16 },
-  avatar: { width: 68, height: 68, borderRadius: 34, marginRight: 14 },
-  mechanicInfo: { flex: 1, justifyContent: "center" },
-  mechanicName: { fontSize: 16, fontFamily: FontFamily.bold, marginBottom: 2 },
-  mechanicSpecialty: { fontSize: 13, fontFamily: FontFamily.regular, marginBottom: 2 },
-  mechanicExperience: { fontSize: 13, fontFamily: FontFamily.medium, marginBottom: 4 },
+  verifiedText: { color: "#22c55e", fontSize: 11, fontFamily: FontFamily.medium },
+
+  cardHeader: { flexDirection: "row", padding: 16 },
+  avatar: { width: 66, height: 66, borderRadius: 33, marginRight: 14 },
+  cardInfo: { flex: 1, justifyContent: "center" },
+  name: { fontSize: 15, fontFamily: FontFamily.bold, marginBottom: 2 },
+  specialty: { fontSize: 13, fontFamily: FontFamily.regular, marginBottom: 2 },
+  exp: { fontSize: 12, fontFamily: FontFamily.medium, marginBottom: 4 },
   ratingRow: { flexDirection: "row", alignItems: "center", gap: 2 },
   ratingText: { fontSize: 12, fontFamily: FontFamily.medium, marginLeft: 4 },
 
@@ -278,15 +232,15 @@ const styles = StyleSheet.create({
   },
   locationText: { fontSize: 13, fontFamily: FontFamily.regular, flex: 1 },
 
-  buttonsRow: {
+  actionsRow: {
     flexDirection: "row",
     borderTopWidth: StyleSheet.hairlineWidth,
   },
-  cardBtn: {
-    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
-    gap: 6, paddingVertical: 12,
+  actionBtn: {
+    flex: 1, flexDirection: "row", alignItems: "center",
+    justifyContent: "center", gap: 6, paddingVertical: 12,
   },
-  btnText: { fontFamily: FontFamily.medium, fontSize: 14 },
+  actionText: { fontFamily: FontFamily.medium, fontSize: 14 },
   divider: { width: StyleSheet.hairlineWidth },
 
   emptyBox: { alignItems: "center", paddingTop: 60, gap: 12 },
