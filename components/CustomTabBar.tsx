@@ -1,5 +1,13 @@
+/**
+ * CustomTabBar.tsx — Static, always-visible tab bar.
+ *
+ * - Shows on all 5 main tabs
+ * - Returns null on sub-screens with tabBarStyle: { display: 'none' }
+ * - Filters out dynamic route segments like mechanics/[id]
+ * - No animation, no context dependency
+ */
 import React from "react"
-import { View, Text, Pressable, StyleSheet } from "react-native"
+import { View, Text, Pressable, StyleSheet, useWindowDimensions } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useTheme } from "@/context/ThemeContext"
 import { FontFamily } from "@/constants/Theme"
@@ -19,34 +27,63 @@ const TABS: TabItem[] = [
   { name: "profile",   label: "Profile",  Icon: (p) => <User          {...p} /> },
 ]
 
-type Props = {
-  state: any
-  descriptors: any
-  navigation: any
+function rootSegment(routeName: string) {
+  return routeName.replace("/index", "").split("/")[0]
 }
+
+type Props = { state: any; descriptors: any; navigation: any }
 
 export default function CustomTabBar({ state, descriptors, navigation }: Props) {
   const { colors, isDark } = useTheme()
-  const insets = useSafeAreaInsets()
+  const insets   = useSafeAreaInsets()
+  const { width } = useWindowDimensions()
+
+  // Hide entirely on sub-screens that opt out explicitly
+  const focusedRoute   = state.routes[state.index]
+  const focusedOptions = descriptors[focusedRoute.key]?.options ?? {}
+  const tabBarHideStyle = focusedOptions.tabBarStyle as any
+  if (tabBarHideStyle?.display === "none") return null
+
+  // Safely find the deepest active route name
+  let currentRoute = focusedRoute
+  while (currentRoute.state && currentRoute.state.routes) {
+    currentRoute = currentRoute.state.routes[currentRoute.state.index ?? 0]
+  }
+  const activeName = currentRoute.name
+
+  // In Expo router, the top level screens of our tabs are typically named "index" or end with "/index"
+  // If the active deepest screen is anything else (e.g. "[id]", "manual", "sound", "crop"), it's a sub-screen.
+  const isRootScreen = activeName === "index" || activeName.endsWith("/index") || activeName === focusedRoute.name
+  
+  if (!isRootScreen) {
+    return null
+  }
 
   const activeBg    = isDark ? colors.primary + "28" : colors.primary + "1A"
   const activeColor = colors.primary
   const mutedColor  = colors.tabIconDefault
+  const PAD  = 8
+  const pillSize   = Math.min(((width - PAD * 2) / 5) - 4, 68)
+  const pillRadius = pillSize / 2
+  const iconSize   = pillSize < 64 ? 20 : 22
+  const fontSize   = pillSize < 64 ? 9  : 10
+
+  const visibleRoutes = state.routes.filter((r: any) =>
+    !r.name.includes("[") && TABS.some((t) => t.name === rootSegment(r.name))
+  )
 
   return (
     <View style={[styles.bar, {
-      backgroundColor: isDark ? colors.card : "#ffffff",
-      borderTopColor:  isDark ? colors.border : "#e2e8f0",
-      paddingBottom:   insets.bottom + 6,
+      backgroundColor:   isDark ? colors.card : "#ffffff",
+      borderTopColor:    isDark ? colors.border : "#e2e8f0",
+      paddingBottom:     insets.bottom + 6,
+      paddingHorizontal: PAD,
     }]}>
-      {state.routes.map((route: any, index: number) => {
-        const isFocused = state.index === index
-        const tab = TABS.find((t) => route.name.startsWith(t.name)) ?? TABS[index]
+      {visibleRoutes.map((route: any) => {
+        const isFocused = state.index === state.routes.indexOf(route)
+        const tab = TABS.find((t) => t.name === rootSegment(route.name))
         if (!tab) return null
-
-        const IconComp = tab.Icon
-        const color    = isFocused ? activeColor : mutedColor
-
+        const color = isFocused ? activeColor : mutedColor
         return (
           <Pressable
             key={route.key}
@@ -58,18 +95,14 @@ export default function CustomTabBar({ state, descriptors, navigation }: Props) 
             }}
             style={styles.btn}
           >
-            {/* Single consolidated style object — no StyleSheet merge — forces borderRadius on every render */}
             <View style={{
-              width:           72,
-              height:          72,
-              borderRadius:    36,
-              overflow:        "hidden",
+              width: pillSize, height: pillSize, borderRadius: pillRadius,
+              overflow: "hidden",
               backgroundColor: isFocused ? activeBg : "transparent",
-              alignItems:      "center",
-              justifyContent:  "center",
+              alignItems: "center", justifyContent: "center",
             }}>
-              <IconComp color={color} size={22} />
-              <Text style={{ color, fontFamily: FontFamily.medium, fontSize: 10, marginTop: 3 }}>
+              <tab.Icon color={color} size={iconSize} />
+              <Text numberOfLines={1} style={{ color, fontFamily: FontFamily.medium, fontSize, marginTop: 3 }}>
                 {tab.label}
               </Text>
             </View>
@@ -82,14 +115,11 @@ export default function CustomTabBar({ state, descriptors, navigation }: Props) 
 
 const styles = StyleSheet.create({
   bar: {
-    flexDirection:  "row",
+    flexDirection: "row",
     borderTopWidth: StyleSheet.hairlineWidth,
-    paddingTop:     8,
+    paddingTop: 8,
   },
   btn: {
-    flex:           1,
-    alignItems:     "center",
-    justifyContent: "center",
-    paddingVertical: 4,
+    flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 4,
   },
 })

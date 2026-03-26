@@ -3,20 +3,28 @@
 import { useState } from "react"
 import { StyleSheet, Text, View, FlatList, TouchableOpacity } from "react-native"
 import { useTheme } from "@/context/ThemeContext"
-import { AlertCircle, Camera, Mic, Calendar, ChevronRight, History as HistoryIcon } from "@/components/SafeLucide"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { AlertCircle, Camera, Mic, Calendar, ChevronRight, History as HistoryIcon, FileText } from "@/components/SafeLucide"
 import { useRouter } from "expo-router"
+import ScreenHeader, { SCREEN_HEADER_H } from "@/components/ScreenHeader"
 import React from "react"
 import { DiagnosisHistory, mockHistory } from "@/data/mockData"
+import { FontFamily, FontSize } from "@/constants/Theme"
+import AppButton from "@/components/AppButton"
 
 export default function HistoryScreen() {
-  const { colors } = useTheme()
+  const { colors, theme } = useTheme()
   const router = useRouter()
+  const insets = useSafeAreaInsets()
   const [history, setHistory] = useState<DiagnosisHistory[]>(mockHistory)
   const [filter, setFilter] = useState<"all" | "unresolved" | "resolved">("all")
 
   const filteredHistory =
     filter === "all"
-      ? history
+      ? [...history].sort((a, b) => {
+          if (a.resolved === b.resolved) return 0
+          return a.resolved ? 1 : -1
+        })
       : filter === "unresolved"
         ? history.filter((item) => !item.resolved)
         : history.filter((item) => item.resolved)
@@ -40,15 +48,22 @@ export default function HistoryScreen() {
       backgroundColor: colors.background,
     },
     header: {
-      paddingTop: 60,
+      paddingTop: insets.top + 16,
       paddingHorizontal: 24,
       paddingBottom: 20,
     },
+    headerTop: { flexDirection: "row", alignItems: "center" },
+    backBtn: {
+      width: 40, height: 40, borderRadius: 20,
+      backgroundColor: theme === "dark" ? colors.card : "#f1f5f9",
+      alignItems: "center", justifyContent: "center",
+      marginRight: 12,
+    },
     title: {
-      fontSize: 28,
-      fontFamily: "Poppins-Bold",
+      fontSize: FontSize.xl,
+      fontFamily: FontFamily.bold,
       color: colors.text,
-      marginBottom: 16,
+      letterSpacing: -0.5,
     },
     filterContainer: {
       flexDirection: "row",
@@ -117,7 +132,7 @@ export default function HistoryScreen() {
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: "rgba(255, 215, 0, 0.1)",
+      backgroundColor: colors.primary + "1A",
       justifyContent: "center",
       alignItems: "center",
       marginRight: 12,
@@ -160,7 +175,7 @@ export default function HistoryScreen() {
       paddingHorizontal: 8,
       paddingVertical: 2,
       borderRadius: 12,
-      backgroundColor: colors.success,
+      backgroundColor: colors.primary,
     },
     unresolvedBadge: {
       paddingHorizontal: 8,
@@ -180,10 +195,6 @@ export default function HistoryScreen() {
       fontFamily: "Poppins-Medium",
       color: colors.text,
     },
-    toggleButton: {
-      marginTop: 16,
-      alignSelf: "flex-end",
-    },
     toggleText: {
       fontSize: 14,
       fontFamily: "Poppins-Medium",
@@ -194,7 +205,7 @@ export default function HistoryScreen() {
   const renderHistoryItem = ({ item }: { item: DiagnosisHistory }) => (
     <TouchableOpacity
       style={styles.historyCard}
-      onPress={() => router.push({ pathname: "/(tabs)/history", params: { id: item.id } })}
+      onPress={() => router.push({ pathname: "/(tabs)/history/[id]", params: { id: item.id } })}
     >
       <View style={styles.historyHeader}>
         <View style={styles.typeIcon}>
@@ -203,7 +214,7 @@ export default function HistoryScreen() {
           ) : item.type === "sound" ? (
             <Mic size={20} color={colors.primary} />
           ) : (
-            <AlertCircle size={20} color={colors.primary} />
+            <FileText size={20} color={colors.primary} />
           )}
         </View>
         <View style={styles.historyInfo}>
@@ -220,14 +231,7 @@ export default function HistoryScreen() {
         <View
           style={[
             styles.severityBadge,
-            {
-              backgroundColor:
-                item.severity === "High"
-                  ? "rgba(229, 57, 53, 0.2)"
-                  : item.severity === "Medium"
-                    ? "rgba(255, 193, 7, 0.2)"
-                    : "rgba(76, 175, 80, 0.2)",
-            },
+            { backgroundColor: "transparent" },
           ]}
         >
           <Text
@@ -249,69 +253,76 @@ export default function HistoryScreen() {
         </View>
       </View>
 
-      <TouchableOpacity style={styles.toggleButton} onPress={() => toggleResolved(item.id)}>
-        <Text style={styles.toggleText}>Mark as {item.resolved ? "Unresolved" : "Resolved"}</Text>
-      </TouchableOpacity>
+      <AppButton
+        label={`Mark as ${item.resolved ? "Unresolved" : "Resolved"}`}
+        variant="ghost"
+        onPress={() => toggleResolved(item.id)}
+        textStyle={styles.toggleText}
+        fullWidth={false}
+        style={{ marginTop: 16, alignSelf: "flex-end" }}
+      />
     </TouchableOpacity>
   )
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Diagnosis History</Text>
-      </View>
-
-      <View style={styles.filterContainer}>
-        <TouchableOpacity
-          style={[styles.filterButton, filter === "all" ? styles.activeFilter : styles.inactiveFilter]}
-          onPress={() => setFilter("all")}
-        >
-          <Text
-            style={[styles.filterButtonText, filter === "all" ? styles.activeFilterText : styles.inactiveFilterText]}
-          >
-            All
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.filterButton, filter === "unresolved" ? styles.activeFilter : styles.inactiveFilter]}
-          onPress={() => setFilter("unresolved")}
-        >
-          <Text
-            style={[
-              styles.filterButtonText,
-              filter === "unresolved" ? styles.activeFilterText : styles.inactiveFilterText,
-            ]}
-          >
-            Unresolved
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.filterButton, filter === "resolved" ? styles.activeFilter : styles.inactiveFilter]}
-          onPress={() => setFilter("resolved")}
-        >
-          <Text
-            style={[
-              styles.filterButtonText,
-              filter === "resolved" ? styles.activeFilterText : styles.inactiveFilterText,
-            ]}
-          >
-            Resolved
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <ScreenHeader 
+        title="Diagnosis History" 
+        onBack={() => router.canGoBack() ? router.back() : router.replace("/(tabs)")} 
+      />
 
       {filteredHistory.length > 0 ? (
         <FlatList
           data={filteredHistory}
           keyExtractor={(item) => item.id}
           renderItem={renderHistoryItem}
-          contentContainerStyle={styles.listContainer}
+          ListHeaderComponent={
+            <View style={[styles.filterContainer, { marginBottom: 16 }]}>
+              <TouchableOpacity
+                style={[styles.filterButton, filter === "all" ? styles.activeFilter : styles.inactiveFilter]}
+                onPress={() => setFilter("all")}
+              >
+                <Text
+                  style={[styles.filterButtonText, filter === "all" ? styles.activeFilterText : styles.inactiveFilterText]}
+                >
+                  All
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.filterButton, filter === "unresolved" ? styles.activeFilter : styles.inactiveFilter]}
+                onPress={() => setFilter("unresolved")}
+              >
+                <Text
+                  style={[
+                    styles.filterButtonText,
+                    filter === "unresolved" ? styles.activeFilterText : styles.inactiveFilterText,
+                  ]}
+                >
+                  Unresolved
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.filterButton, filter === "resolved" ? styles.activeFilter : styles.inactiveFilter]}
+                onPress={() => setFilter("resolved")}
+              >
+                <Text
+                  style={[
+                    styles.filterButtonText,
+                    filter === "resolved" ? styles.activeFilterText : styles.inactiveFilterText,
+                  ]}
+                >
+                  Resolved
+                </Text>
+              </TouchableOpacity>
+            </View>
+          }
+          contentContainerStyle={[styles.listContainer, { paddingTop: insets.top + SCREEN_HEADER_H + 16, paddingBottom: insets.bottom + 20 }]}
           showsVerticalScrollIndicator={false}
         />
       ) : (
-        <View style={styles.emptyContainer}>
+        <View style={[styles.emptyContainer, { paddingTop: insets.top + SCREEN_HEADER_H + 16 }]}>
           <HistoryIcon size={48} color={colors.tabIconDefault} />
           <Text style={styles.emptyText}>No diagnosis history found</Text>
         </View>

@@ -3,6 +3,7 @@
 import React from "react"
 import { StyleSheet, Text, View, TouchableOpacity, Image, ScrollView, Alert, TextInput } from "react-native"
 import { useTheme } from "@/context/ThemeContext"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useAuth } from "@/context/AuthContext"
 
 type MechanicInfo = {
@@ -35,11 +36,15 @@ import {
   MapPin,
   Phone,
 } from "@/components/SafeLucide"
+import { FontFamily, FontSize } from "@/constants/Theme"
+import ScreenHeader, { SCREEN_HEADER_H } from "@/components/ScreenHeader"
+import AppButton from "@/components/AppButton"
 
 const ProfileScreen: React.FC = () => {
   const { user, signOut } = useAuth() as { user: User; signOut: () => Promise<void> }
   const { colors, theme, toggleTheme } = useTheme()
   const router = useRouter()
+  const insets = useSafeAreaInsets()
   const [editMode, setEditMode] = React.useState(false)
   const [mechanicInfo, setMechanicInfo] = React.useState({
     address: user?.mechanicInfo?.address || "",
@@ -75,11 +80,20 @@ const ProfileScreen: React.FC = () => {
       backgroundColor: theme === "light" ? "#f0f8ff" : colors.background,
     },
     header: {
-      paddingTop: 60,
+      paddingTop: insets.top + 16,
       paddingHorizontal: 24,
       paddingBottom: 24,
       alignItems: "center",
       backgroundColor: theme === "light" ? "#e3f2fd" : colors.card,
+    },
+    backBtn: {
+      position: "absolute",
+      top: insets.top + 16,
+      left: 24,
+      width: 40, height: 40, borderRadius: 20,
+      backgroundColor: theme === "light" ? "#ffffff" : colors.background,
+      alignItems: "center", justifyContent: "center",
+      zIndex: 10,
     },
     profileImage: {
       width: 100,
@@ -90,10 +104,11 @@ const ProfileScreen: React.FC = () => {
       borderColor: colors.primary,
     },
     name: {
-      fontSize: 24,
-      fontFamily: "Poppins-Bold",
+      fontSize: FontSize.xl,
+      fontFamily: FontFamily.bold,
       color: colors.text,
       textAlign: "center",
+      letterSpacing: -0.5,
     },
     email: {
       fontSize: 14,
@@ -166,52 +181,19 @@ const ProfileScreen: React.FC = () => {
       color: colors.text,
       fontFamily: "Poppins-Regular",
     },
-    saveButton: {
-      backgroundColor: colors.primary,
-      padding: 16,
-      borderRadius: 12,
-      alignItems: "center",
-      marginTop: 16,
-    },
-    saveButtonText: {
-      color: theme === "light" ? "#000" : colors.secondary,
-      fontSize: 16,
-      fontFamily: "Poppins-Medium",
-    },
-    editButton: {
-      position: "absolute",
-      right: 24,
-      top: 24,
-      backgroundColor: colors.primary,
-      padding: 8,
-      borderRadius: 8,
-    },
-    editButtonText: {
-      color: theme === "light" ? "#000" : colors.secondary,
-      fontFamily: "Poppins-Medium",
-    },
-    signOutButton: {
-      backgroundColor: "rgba(255, 59, 48, 0.1)",
-      padding: 16,
-      borderRadius: 16,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      marginTop: 24,
-      marginBottom: 40,
-    },
-    signOutText: {
-      color: colors.error,
-      fontSize: 16,
-      fontFamily: "Poppins-Medium",
-      marginLeft: 8,
-    },
   })
 
   return (
     <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
+      <ScreenHeader 
+        title="Profile" 
+        onBack={() => router.canGoBack() ? router.back() : router.replace("/(tabs)")} 
+      />
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingTop: insets.top + SCREEN_HEADER_H + 16 }}
+      >
+        <View style={[styles.header, { paddingTop: 0 }]}>
           <Image
             source={{ uri: "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg" }}
             style={styles.profileImage}
@@ -221,9 +203,14 @@ const ProfileScreen: React.FC = () => {
           <Text style={styles.role}>{user?.role === "mechanic" ? "Mechanic" : "Car Owner"}</Text>
 
           {user?.role === "mechanic" && (
-            <TouchableOpacity style={styles.editButton} onPress={() => setEditMode(!editMode)}>
-              <Text style={styles.editButtonText}>{editMode ? "Cancel" : "Edit Info"}</Text>
-            </TouchableOpacity>
+            <AppButton
+              label={editMode ? "Cancel" : "Edit Info"}
+              variant={editMode ? "soft" : "primary"}
+              size="sm"
+              onPress={() => setEditMode(!editMode)}
+              fullWidth={false}
+              style={{ position: "absolute", right: 24, top: 24 }}
+            />
           )}
         </View>
 
@@ -261,9 +248,11 @@ const ProfileScreen: React.FC = () => {
                 placeholderTextColor={colors.tabIconDefault}
                 keyboardType="number-pad"
               />
-              <TouchableOpacity style={styles.saveButton} onPress={handleSaveInfo}>
-                <Text style={styles.saveButtonText}>Save Information</Text>
-              </TouchableOpacity>
+              <AppButton
+                label="Save Information"
+                onPress={handleSaveInfo}
+                style={{ marginTop: 16 }}
+              />
             </View>
           </View>
         ) : (
@@ -358,10 +347,13 @@ const ProfileScreen: React.FC = () => {
         )}
 
         <View style={styles.section}>
-          <TouchableOpacity style={styles.signOutButton} onPress={confirmSignOut}>
-            <LogOut size={20} color={colors.error} />
-            <Text style={styles.signOutText}>Sign Out</Text>
-          </TouchableOpacity>
+          <AppButton
+            label="Sign Out"
+            variant="danger"
+            icon={<LogOut size={20} color={colors.error} />}
+            onPress={confirmSignOut}
+            style={{ marginBottom: 40 }}
+          />
         </View>
       </ScrollView>
     </View>

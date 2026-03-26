@@ -6,6 +6,7 @@ import { Camera, Mic, MessageSquare, AlertTriangle, ArrowRight, Star } from "@/c
 import { useRouter } from "expo-router"
 import React from "react"
 import { FontFamily } from "@/constants/Theme"
+import AppButton from "@/components/AppButton"
 
 const { width } = Dimensions.get("window")
 
@@ -67,21 +68,6 @@ export default function HomeScreen() {
       color: "rgba(255, 255, 255, 0.8)",
       marginTop: 8,
       maxWidth: "70%",
-    },
-    bannerButton: {
-      backgroundColor: "#ffffff",
-      paddingHorizontal: 20,
-      paddingVertical: 10,
-      borderRadius: 100,
-      alignSelf: "flex-start",
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 6,
-    },
-    bannerButtonText: {
-      color: colors.primary,
-      fontFamily: FontFamily.semiBold,
-      fontSize: 14,
     },
     sectionHeader: {
       flexDirection: "row",
@@ -203,17 +189,6 @@ export default function HomeScreen() {
       fontFamily: FontFamily.semiBold,
       color: colors.text,
     },
-    contactBtn: {
-      backgroundColor: isDark ? colors.primary + "20" : colors.primary + "15",
-      paddingHorizontal: 14,
-      paddingVertical: 6,
-      borderRadius: 100,
-    },
-    contactBtnTxt: {
-      fontSize: 12,
-      fontFamily: FontFamily.semiBold,
-      color: colors.primary,
-    },
   })
 
   // Dynamic gradient based on theme (Dark Navy -> Muted Gold accent)
@@ -239,10 +214,16 @@ export default function HomeScreen() {
             <View style={styles.bannerContent}>
               <Text style={styles.bannerTitle}>Car Issues?</Text>
               <Text style={styles.bannerText}>Get instant AI-powered diagnosis for your vehicle.</Text>
-              <TouchableOpacity style={styles.bannerButton} onPress={() => router.push("/(tabs)/diagnose")}>
-                <Text style={styles.bannerButtonText}>Diagnose Now</Text>
-                <ArrowRight size={14} color={colors.primary} />
-              </TouchableOpacity>
+              <AppButton 
+                label="Diagnose Now" 
+                variant="inverse" 
+                size="sm" 
+                icon={<ArrowRight size={14} color={colors.primary} />} 
+                iconPosition="right" 
+                onPress={() => router.push("/(tabs)/diagnose")} 
+                fullWidth={false}
+                style={{ borderRadius: 100, marginTop: 16 }}
+              />
             </View>
           </ImageBackground>
         </View>
@@ -298,9 +279,13 @@ export default function HomeScreen() {
         {/* Top Mechanics Carousel */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Top Rated Mechanics</Text>
-          <TouchableOpacity onPress={() => router.push("/(tabs)/mechanics")}>
-            <Text style={styles.sectionAction}>See All</Text>
-          </TouchableOpacity>
+          <AppButton 
+            label="See All" 
+            variant="ghost" 
+            onPress={() => router.push("/(tabs)/mechanics")} 
+            textStyle={styles.sectionAction}
+            fullWidth={false}
+          />
         </View>
 
         <ScrollView 
@@ -321,9 +306,14 @@ export default function HomeScreen() {
                 <Star size={14} color="#D4AF37" fill="#D4AF37" />
                 <Text style={styles.ratingNum}>4.8</Text>
               </View>
-              <TouchableOpacity style={styles.contactBtn} onPress={() => router.push("/(tabs)/mechanics")}>
-                <Text style={styles.contactBtnTxt}>Contact</Text>
-              </TouchableOpacity>
+              <AppButton 
+                label="Contact" 
+                variant="soft" 
+                size="sm" 
+                onPress={() => router.push("/(tabs)/mechanics")} 
+                fullWidth={false}
+                style={{ borderRadius: 100 }}
+              />
             </View>
           </View>
 
@@ -340,9 +330,14 @@ export default function HomeScreen() {
                 <Star size={14} color="#D4AF37" fill="#D4AF37" />
                 <Text style={styles.ratingNum}>4.9</Text>
               </View>
-              <TouchableOpacity style={styles.contactBtn} onPress={() => router.push("/(tabs)/mechanics")}>
-                <Text style={styles.contactBtnTxt}>Contact</Text>
-              </TouchableOpacity>
+              <AppButton 
+                label="Contact" 
+                variant="soft" 
+                size="sm" 
+                onPress={() => router.push("/(tabs)/mechanics")} 
+                fullWidth={false}
+                style={{ borderRadius: 100 }}
+              />
             </View>
           </View>
         </ScrollView>

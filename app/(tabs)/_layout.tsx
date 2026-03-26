@@ -165,8 +165,8 @@ export default function TabLayout() {
     <Tabs
       tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{
-        // Default header for all tabs (overridden per-screen below)
-        header: () => <AppHeader />,
+        // All non-home screens get NO header — each screen owns its own heading
+        headerShown: false,
       }}
     >
       {/* Home tab — two-row header WITH search bar */}
@@ -174,12 +174,13 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Home",
+          headerShown: true,
           header: () => <HomeHeader />,
           tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
         }}
       />
 
-      {/* All other tabs — clean single-row header */}
+      {/* All other tabs — no header, screen owns its layout */}
       <Tabs.Screen
         name="diagnose"
         options={{
@@ -188,14 +189,14 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="mechanics/index"
+        name="mechanics"
         options={{
           title: "Mechanics",
           tabBarIcon: ({ color, size }) => <Wrench size={size} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="history/index"
+        name="history"
         options={{
           title: "History",
           tabBarIcon: ({ color, size }) => <ClipboardList size={size} color={color} />,

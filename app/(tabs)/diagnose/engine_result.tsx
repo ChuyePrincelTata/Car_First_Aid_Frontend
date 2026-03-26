@@ -128,7 +128,7 @@ export default function EngineSoundResultScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <LinearGradient colors={[colors.primary, colors.tint]} style={styles.header}>
         <View style={styles.headerContent}>
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
+          <Pressable onPress={() => router.navigate("/(tabs)/diagnose")} style={styles.backButton}>
             <ChevronLeft color={colors.secondary} size={24} />
           </Pressable>
           <Text style={[styles.headerTitle, { color: colors.secondary }]}>Diagnostic Result</Text>

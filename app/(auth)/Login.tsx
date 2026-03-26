@@ -23,6 +23,7 @@ import { Lock, Mail, Eye, EyeOff } from "@/components/SafeLucide"
 import { useAuth } from "@/context/AuthContext"
 import { useTheme } from "@/context/ThemeContext"
 import { Spacing, Radius, FontSize, FontFamily, Shadows } from "@/constants/Theme"
+import AppButton from "@/components/AppButton"
 import React from "react"
 
 export default function LoginScreen() {
@@ -141,24 +142,6 @@ export default function LoginScreen() {
       color: colors.primary,
     },
 
-    /* ── primary button ── */
-    btn: {
-      height: 54,
-      borderRadius: Radius.lg,
-      backgroundColor: colors.primary,
-      alignItems: "center",
-      justifyContent: "center",
-      marginTop: Spacing.xs,
-      ...Shadows.md,
-    },
-    btnText: {
-      fontSize: FontSize.base,
-      fontFamily: FontFamily.bold,
-      // buttonText ensures readable contrast on primary-coloured button
-      color: colors.buttonText,
-      letterSpacing: 0.3,
-    },
-
     /* ── divider ── */
     dividerRow: {
       flexDirection: "row",
@@ -272,17 +255,13 @@ export default function LoginScreen() {
             </View>
 
             {/* Submit button */}
-            <TouchableOpacity
-              style={[s.btn, isLoading && { opacity: 0.7 }]}
+            <AppButton
+              label="Sign In"
               onPress={handleLogin}
-              disabled={isLoading}
-              activeOpacity={0.85}
-            >
-              {isLoading
-                ? <ActivityIndicator color={colors.buttonText} />
-                : <Text style={s.btnText}>Sign In</Text>
-              }
-            </TouchableOpacity>
+              loading={isLoading}
+              size="lg"
+              style={{ marginTop: Spacing.xs }}
+            />
           </View>
 
           {/* ── Divider ── */}

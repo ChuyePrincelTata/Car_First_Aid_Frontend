@@ -6,6 +6,7 @@ import { useRouter } from "expo-router"
 import { testBackendConnection, runDiagnostics } from "../utils/networkTest"
 import { getEnvironmentInfo } from "../utils/apiConfig"
 import { useTheme } from "@/context/ThemeContext"
+import AppButton from "@/components/AppButton"
 import React from "react"
 
 export default function ConnectionTestScreen() {
@@ -98,30 +99,6 @@ export default function ConnectionTestScreen() {
       backgroundColor: "rgba(0,0,0,0.05)",
       borderRadius: 5,
     },
-    button: {
-      backgroundColor: colors.primary,
-      padding: 15,
-      borderRadius: 10,
-      alignItems: "center",
-      marginVertical: 10,
-    },
-    buttonSecondary: {
-      backgroundColor: "rgba(0,0,0,0.1)",
-      padding: 15,
-      borderRadius: 10,
-      alignItems: "center",
-      marginVertical: 10,
-    },
-    buttonText: {
-      color: colors.background,
-      fontSize: 16,
-      fontWeight: "bold",
-    },
-    buttonTextSecondary: {
-      color: colors.text,
-      fontSize: 16,
-      fontWeight: "bold",
-    },
     resultContainer: {
       marginTop: 20,
       padding: 15,
@@ -133,17 +110,6 @@ export default function ConnectionTestScreen() {
       fontSize: 12,
       color: colors.text,
       fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
-    },
-    backButton: {
-      marginTop: 20,
-      padding: 15,
-      borderRadius: 10,
-      alignItems: "center",
-      backgroundColor: "rgba(0,0,0,0.1)",
-    },
-    backButtonText: {
-      color: colors.text,
-      fontSize: 16,
     },
   })
 
@@ -159,21 +125,20 @@ export default function ConnectionTestScreen() {
         <Text style={styles.envInfo}>{envInfo}</Text>
       </View>
 
-      <TouchableOpacity style={styles.button} onPress={runConnectionTest} disabled={isLoading}>
-        {isLoading ? (
-          <ActivityIndicator color={colors.background} />
-        ) : (
-          <Text style={styles.buttonText}>Quick Connection Test</Text>
-        )}
-      </TouchableOpacity>
+      <AppButton
+        label={isLoading ? "Testing..." : "Quick Connection Test"}
+        onPress={runConnectionTest}
+        disabled={isLoading}
+        style={{ marginVertical: 10 }}
+      />
 
-      <TouchableOpacity style={styles.buttonSecondary} onPress={runFullDiagnostics} disabled={isLoading}>
-        {isLoading ? (
-          <ActivityIndicator color={colors.text} />
-        ) : (
-          <Text style={styles.buttonTextSecondary}>Full Diagnostics</Text>
-        )}
-      </TouchableOpacity>
+      <AppButton
+        label={isLoading ? "Running..." : "Full Diagnostics"}
+        variant="soft"
+        onPress={runFullDiagnostics}
+        disabled={isLoading}
+        style={{ marginVertical: 10 }}
+      />
 
       {testResult && (
         <View style={styles.resultContainer}>
@@ -187,9 +152,13 @@ export default function ConnectionTestScreen() {
         </View>
       )}
 
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-        <Text style={styles.backButtonText}>Go Back</Text>
-      </TouchableOpacity>
+      <AppButton
+        label="Go Back"
+        variant="ghost"
+        onPress={() => router.back()}
+        style={{ marginTop: 20, alignSelf: "center" }}
+        fullWidth={false}
+      />
     </ScrollView>
   )
 }
