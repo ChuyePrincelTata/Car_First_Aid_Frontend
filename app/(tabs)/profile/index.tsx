@@ -38,6 +38,7 @@ import {
 } from "@/components/SafeLucide"
 import { FontFamily, FontSize } from "@/constants/Theme"
 import ScreenHeader, { SCREEN_HEADER_H } from "@/components/ScreenHeader"
+import AppButton from "@/components/AppButton"
 
 const ProfileScreen: React.FC = () => {
   const { user, signOut } = useAuth() as { user: User; signOut: () => Promise<void> }
@@ -180,46 +181,6 @@ const ProfileScreen: React.FC = () => {
       color: colors.text,
       fontFamily: "Poppins-Regular",
     },
-    saveButton: {
-      backgroundColor: colors.primary,
-      padding: 16,
-      borderRadius: 12,
-      alignItems: "center",
-      marginTop: 16,
-    },
-    saveButtonText: {
-      color: theme === "light" ? "#000" : colors.secondary,
-      fontSize: 16,
-      fontFamily: "Poppins-Medium",
-    },
-    editButton: {
-      position: "absolute",
-      right: 24,
-      top: 24,
-      backgroundColor: colors.primary,
-      padding: 8,
-      borderRadius: 8,
-    },
-    editButtonText: {
-      color: theme === "light" ? "#000" : colors.secondary,
-      fontFamily: "Poppins-Medium",
-    },
-    signOutButton: {
-      backgroundColor: "rgba(255, 59, 48, 0.1)",
-      padding: 16,
-      borderRadius: 16,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      marginTop: 24,
-      marginBottom: 40,
-    },
-    signOutText: {
-      color: colors.error,
-      fontSize: 16,
-      fontFamily: "Poppins-Medium",
-      marginLeft: 8,
-    },
   })
 
   return (
@@ -242,9 +203,14 @@ const ProfileScreen: React.FC = () => {
           <Text style={styles.role}>{user?.role === "mechanic" ? "Mechanic" : "Car Owner"}</Text>
 
           {user?.role === "mechanic" && (
-            <TouchableOpacity style={styles.editButton} onPress={() => setEditMode(!editMode)}>
-              <Text style={styles.editButtonText}>{editMode ? "Cancel" : "Edit Info"}</Text>
-            </TouchableOpacity>
+            <AppButton
+              label={editMode ? "Cancel" : "Edit Info"}
+              variant={editMode ? "soft" : "primary"}
+              size="sm"
+              onPress={() => setEditMode(!editMode)}
+              fullWidth={false}
+              style={{ position: "absolute", right: 24, top: 24 }}
+            />
           )}
         </View>
 
@@ -282,9 +248,11 @@ const ProfileScreen: React.FC = () => {
                 placeholderTextColor={colors.tabIconDefault}
                 keyboardType="number-pad"
               />
-              <TouchableOpacity style={styles.saveButton} onPress={handleSaveInfo}>
-                <Text style={styles.saveButtonText}>Save Information</Text>
-              </TouchableOpacity>
+              <AppButton
+                label="Save Information"
+                onPress={handleSaveInfo}
+                style={{ marginTop: 16 }}
+              />
             </View>
           </View>
         ) : (
@@ -379,10 +347,13 @@ const ProfileScreen: React.FC = () => {
         )}
 
         <View style={styles.section}>
-          <TouchableOpacity style={styles.signOutButton} onPress={confirmSignOut}>
-            <LogOut size={20} color={colors.error} />
-            <Text style={styles.signOutText}>Sign Out</Text>
-          </TouchableOpacity>
+          <AppButton
+            label="Sign Out"
+            variant="danger"
+            icon={<LogOut size={20} color={colors.error} />}
+            onPress={confirmSignOut}
+            style={{ marginBottom: 40 }}
+          />
         </View>
       </ScrollView>
     </View>

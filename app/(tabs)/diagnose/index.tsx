@@ -12,6 +12,7 @@ import { getApiBaseUrl } from "@/utils/apiConfig"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { FontFamily, FontSize, Spacing, Radius } from "@/constants/Theme"
 import { useWhatsAppCropper } from "@/hooks/useWhatsAppCropper"
+import AppButton from "@/components/AppButton"
 import { useLocalSearchParams } from "expo-router"
 import React, { useEffect } from "react"
 
@@ -188,41 +189,6 @@ export default function DiagnoseScreen() {
       marginHorizontal: Spacing.xl,
       marginTop: Spacing.md,
     },
-    btn: {
-      flex: 1,
-      paddingVertical: 14,
-      borderRadius: Radius.lg,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    btnPrimary: {
-      backgroundColor: colors.primary,
-    },
-    btnSecondary: {
-      backgroundColor: colors.card,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    btnText: {
-      fontFamily: FontFamily.semiBold,
-      fontSize: FontSize.sm,
-    },
-    btnTextPrimary: { color: colors.buttonText },
-    btnTextSecondary: { color: colors.text },
-    // ─── Analyse button ──────────────────────────────────────────────────────
-    analyzeBtn: {
-      marginHorizontal: Spacing.xl,
-      marginTop: Spacing.md,
-      paddingVertical: 16,
-      borderRadius: Radius.lg,
-      backgroundColor: colors.primary,
-      alignItems: "center",
-    },
-    analyzeBtnText: {
-      fontFamily: FontFamily.bold,
-      fontSize: FontSize.md,
-      color: colors.buttonText,
-    },
     // ─── Change / Reset row ──────────────────────────────────────────────────
     changeRow: {
       flexDirection: "row",
@@ -346,25 +312,41 @@ export default function DiagnoseScreen() {
         {/* Buttons */}
         {!image ? (
           <View style={styles.buttonRow}>
-            <TouchableOpacity style={[styles.btn, styles.btnPrimary]} onPress={takePicture}>
-              <Text style={[styles.btnText, styles.btnTextPrimary]}>Take Photo</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.btn, styles.btnSecondary]} onPress={pickImage}>
-              <Text style={[styles.btnText, styles.btnTextSecondary]}>Upload Photo</Text>
-            </TouchableOpacity>
+            <AppButton
+              label="Take Photo"
+              onPress={takePicture}
+              style={{ flex: 1 }}
+            />
+            <AppButton
+              label="Upload Photo"
+              variant="outline"
+              onPress={pickImage}
+              style={{ flex: 1 }}
+            />
           </View>
         ) : !diagnosisResult ? (
           <>
-            <TouchableOpacity style={styles.analyzeBtn} onPress={analyzeDashboard}>
-              <Text style={styles.analyzeBtnText}>Analyse Dashboard Lights</Text>
-            </TouchableOpacity>
+            <AppButton
+              label="Analyse Dashboard Lights"
+              onPress={analyzeDashboard}
+              style={{ marginHorizontal: Spacing.xl, marginTop: Spacing.md }}
+              size="lg"
+            />
             <View style={styles.changeRow}>
-              <TouchableOpacity onPress={pickImage}>
-                <Text style={styles.changeText}>Change photo</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={resetDiagnosis}>
-                <Text style={styles.resetText}>Cancel</Text>
-              </TouchableOpacity>
+              <AppButton
+                label="Change photo"
+                variant="ghost"
+                onPress={pickImage}
+                textStyle={styles.changeText}
+                fullWidth={false}
+              />
+              <AppButton
+                label="Cancel"
+                variant="ghost"
+                onPress={resetDiagnosis}
+                textStyle={styles.resetText}
+                fullWidth={false}
+              />
             </View>
           </>
         ) : null}
@@ -407,9 +389,14 @@ export default function DiagnoseScreen() {
               </>
             )}
 
-            <TouchableOpacity onPress={resetDiagnosis} style={{ marginTop: Spacing.lg, alignSelf: "center" }}>
-              <Text style={styles.resetText}>Start a New Diagnosis</Text>
-            </TouchableOpacity>
+            <AppButton
+              label="Start a New Diagnosis"
+              variant="ghost"
+              onPress={resetDiagnosis}
+              textStyle={styles.resetText}
+              fullWidth={false}
+              style={{ marginTop: Spacing.lg, alignSelf: "center" }}
+            />
           </View>
         )}
       </ScrollView>

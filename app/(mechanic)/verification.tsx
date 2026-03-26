@@ -7,7 +7,7 @@ import { useAuth } from "@/context/AuthContext"
 import { useRouter } from "expo-router"
 import { Upload, CheckCircle, FileText } from "@/components/SafeLucide"
 import * as ImagePicker from "expo-image-picker"
-import LinearGradient from "@/components/LinearGradient"
+import AppButton from "@/components/AppButton"
 import React from "react"
 
 export default function MechanicVerificationScreen() {
@@ -197,22 +197,6 @@ export default function MechanicVerificationScreen() {
       justifyContent: "space-between",
       marginBottom: 20,
     },
-    retakeButton: {
-      flex: 1,
-      marginRight: 10,
-      paddingVertical: 12,
-      paddingHorizontal: 16,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.card,
-      alignItems: "center",
-    },
-    retakeButtonText: {
-      fontSize: 14,
-      fontFamily: "Poppins-Medium",
-      color: colors.text,
-    },
     requirementSection: {
       marginTop: 20,
       marginBottom: 30,
@@ -237,22 +221,6 @@ export default function MechanicVerificationScreen() {
       fontSize: 14,
       fontFamily: "Poppins-Regular",
       color: colors.text,
-    },
-    uploadButton: {
-      marginTop: 20,
-      overflow: "hidden",
-      borderRadius: 12,
-    },
-    uploadGradient: {
-      paddingVertical: 16,
-      paddingHorizontal: 24,
-      borderRadius: 12,
-    },
-    uploadButtonText: {
-      textAlign: "center",
-      fontSize: 16,
-      fontFamily: "Poppins-Bold",
-      color: colors.secondary,
     },
     noteText: {
       fontSize: 14,
@@ -342,24 +310,23 @@ export default function MechanicVerificationScreen() {
             <>
               <Image source={{ uri: certificateUri }} style={styles.certificatePreview} />
               <View style={styles.imageActions}>
-                <TouchableOpacity style={styles.retakeButton} onPress={retakePhoto}>
-                  <Text style={styles.retakeButtonText}>Choose Different Image</Text>
-                </TouchableOpacity>
+                <AppButton
+                  label="Choose Different Image"
+                  variant="outline"
+                  onPress={retakePhoto}
+                  style={{ flex: 1 }}
+                />
               </View>
             </>
           )}
 
           {certificateUri && (
-            <TouchableOpacity style={styles.uploadButton} onPress={handleUpload}>
-              <LinearGradient
-                colors={["#FFD700", "#FFC000"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.uploadGradient}
-              >
-                <Text style={styles.uploadButtonText}>Submit for Verification</Text>
-              </LinearGradient>
-            </TouchableOpacity>
+            <AppButton
+              label="Submit for Verification"
+              onPress={handleUpload}
+              size="lg"
+              style={{ marginTop: 20 }}
+            />
           )}
         </View>
 

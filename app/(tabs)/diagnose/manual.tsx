@@ -8,6 +8,7 @@ import { AlertTriangle, Play, ChevronLeft } from "@/components/SafeLucide"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useRouter } from "expo-router"
 import { FontFamily, FontSize, Spacing, Radius } from "@/constants/Theme"
+import AppButton from "@/components/AppButton"
 import React from "react"
 
 type VideoLink = { title: string; url: string }
@@ -103,16 +104,6 @@ export default function ManualDiagnosisScreen() {
     },
     spacer: { height: Spacing.md },
 
-    // Buttons
-    analyzeBtn: {
-      marginTop: Spacing.md,
-      paddingVertical: 14,
-      borderRadius: Radius.lg,
-      backgroundColor: colors.primary,
-      alignItems: "center",
-    },
-    analyzeBtnTxt: { fontFamily: FontFamily.bold, fontSize: FontSize.md, color: colors.buttonText },
-
     // Result card
     resultCard: {
       marginHorizontal: Spacing.xl,
@@ -167,7 +158,7 @@ export default function ManualDiagnosisScreen() {
         <View style={styles.headerTop}>
           <TouchableOpacity 
             style={styles.backBtn} 
-            onPress={() => router.canGoBack() ? router.back() : router.replace("/(tabs)")}
+            onPress={() => router.navigate("/(tabs)/diagnose")}
           >
             <ChevronLeft size={24} color={colors.text} />
           </TouchableOpacity>
@@ -210,9 +201,11 @@ export default function ManualDiagnosisScreen() {
               onChangeText={setSymptoms}
             />
 
-            <TouchableOpacity style={styles.analyzeBtn} onPress={analyzeProblem}>
-              <Text style={styles.analyzeBtnTxt}>Analyse Problem</Text>
-            </TouchableOpacity>
+            <AppButton
+              label="Analyse Problem"
+              onPress={analyzeProblem}
+              style={{ marginTop: Spacing.md }}
+            />
           </View>
         )}
 

@@ -189,23 +189,14 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="mechanics/index"
+        name="mechanics"
         options={{
           title: "Mechanics",
           tabBarIcon: ({ color, size }) => <Wrench size={size} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="mechanics/[id]"
-        options={{
-          title: "Mechanic Profile",
-          href: null,
-          tabBarStyle: { display: "none" },
-          headerShown: false,
-        }}
-      />
-      <Tabs.Screen
-        name="history/index"
+        name="history"
         options={{
           title: "History",
           tabBarIcon: ({ color, size }) => <ClipboardList size={size} color={color} />,

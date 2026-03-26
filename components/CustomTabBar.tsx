@@ -38,11 +38,26 @@ export default function CustomTabBar({ state, descriptors, navigation }: Props) 
   const insets   = useSafeAreaInsets()
   const { width } = useWindowDimensions()
 
-  // Hide entirely on sub-screens that opt out
+  // Hide entirely on sub-screens that opt out explicitly
   const focusedRoute   = state.routes[state.index]
   const focusedOptions = descriptors[focusedRoute.key]?.options ?? {}
   const tabBarHideStyle = focusedOptions.tabBarStyle as any
   if (tabBarHideStyle?.display === "none") return null
+
+  // Safely find the deepest active route name
+  let currentRoute = focusedRoute
+  while (currentRoute.state && currentRoute.state.routes) {
+    currentRoute = currentRoute.state.routes[currentRoute.state.index ?? 0]
+  }
+  const activeName = currentRoute.name
+
+  // In Expo router, the top level screens of our tabs are typically named "index" or end with "/index"
+  // If the active deepest screen is anything else (e.g. "[id]", "manual", "sound", "crop"), it's a sub-screen.
+  const isRootScreen = activeName === "index" || activeName.endsWith("/index") || activeName === focusedRoute.name
+  
+  if (!isRootScreen) {
+    return null
+  }
 
   const activeBg    = isDark ? colors.primary + "28" : colors.primary + "1A"
   const activeColor = colors.primary

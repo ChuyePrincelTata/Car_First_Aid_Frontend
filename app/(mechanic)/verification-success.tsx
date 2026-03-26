@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, TouchableOpacity } from "react-native"
 import { useTheme } from "@/context/ThemeContext"
 import { useRouter } from "expo-router"
 import { CheckCircle } from "@/components/SafeLucide"
-import LinearGradient from "@/components/LinearGradient"
+import AppButton from "@/components/AppButton"
 import React from "react"
 
 export default function VerificationSuccessScreen() {
@@ -42,22 +42,6 @@ export default function VerificationSuccessScreen() {
       marginBottom: 40,
       lineHeight: 24,
     },
-    button: {
-      overflow: "hidden",
-      borderRadius: 12,
-      width: "100%",
-    },
-    buttonGradient: {
-      paddingVertical: 16,
-      paddingHorizontal: 24,
-      borderRadius: 12,
-      alignItems: "center",
-    },
-    buttonText: {
-      fontSize: 16,
-      fontFamily: "Poppins-Bold",
-      color: colors.secondary,
-    },
   })
 
   return (
@@ -72,16 +56,11 @@ export default function VerificationSuccessScreen() {
         typically within 1-2 business days.
       </Text>
 
-      <TouchableOpacity style={styles.button} onPress={() => router.replace("/(tabs)")}>
-        <LinearGradient
-          colors={["#FFD700", "#FFC000"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.buttonGradient}
-        >
-          <Text style={styles.buttonText}>Go to Home</Text>
-        </LinearGradient>
-      </TouchableOpacity>
+      <AppButton
+        label="Go to Home"
+        size="lg"
+        onPress={() => router.replace("/(tabs)")}
+      />
     </View>
   )
 }

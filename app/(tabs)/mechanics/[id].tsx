@@ -8,13 +8,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import MapView, { Marker } from "react-native-maps"
 import {
   ChevronLeft, CheckCircle, Star, Phone, MessageSquare,
-  MapPin, Briefcase, FileText,
+  MapPin, Briefcase, FileText, Clock,
 } from "@/components/SafeLucide"
 import { useTheme } from "@/context/ThemeContext"
-import { FontFamily, FontSize } from "@/constants/Theme"
+import { FontFamily, FontSize, Spacing, Radius } from "@/constants/Theme"
 import { mockMechanics } from "@/data/mockData"
+import AppButton from "@/components/AppButton"
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window")
 const GOLD = "#F59E0B"
 
 export default function MechanicProfileScreen() {
@@ -68,6 +68,7 @@ export default function MechanicProfileScreen() {
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 30 }} showsVerticalScrollIndicator={false}>
+
         {/* Hero section */}
         <View style={[styles.hero, { backgroundColor: isDark ? colors.card : "#fff" }]}>
           <Image source={{ uri: mechanic.avatar }} style={styles.heroAvatar} />
@@ -81,8 +82,14 @@ export default function MechanicProfileScreen() {
                 </View>
               )}
             </View>
-            <Text style={[styles.heroSpecialty, { color: colors.subtext }]}>{mechanic.specialty}</Text>
-            <Text style={[styles.heroExp, { color: colors.primary }]}>{mechanic.experience}</Text>
+            <Text style={[styles.heroSpecialty, { color: colors.primary }]}>{mechanic.specialty}</Text>
+
+            <View style={styles.metaRow}>
+              <Clock size={13} color={colors.subtext} />
+              <Text style={[styles.metaText, { color: colors.subtext }]}>{mechanic.experience}</Text>
+              <MapPin size={13} color={colors.subtext} />
+              <Text style={[styles.metaText, { color: colors.subtext }]} numberOfLines={1}>{mechanic.location}</Text>
+            </View>
 
             <View style={styles.ratingRow}>
               {renderStars(mechanic.rating)}
@@ -93,17 +100,21 @@ export default function MechanicProfileScreen() {
           </View>
         </View>
 
-        {/* Action buttons */}
+        {/* Action buttons — Primary: Call, Outlined: WhatsApp */}
         <View style={[styles.actionRow, { backgroundColor: isDark ? colors.card : "#fff", borderTopColor: colors.border }]}>
-          <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.primary }]} onPress={openCall}>
-            <Phone size={18} color={isDark ? "#000" : "#fff"} />
-            <Text style={[styles.actionText, { color: isDark ? "#000" : "#fff" }]}>Call</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.actionBtn, { backgroundColor: GOLD }]} onPress={openWhatsApp}>
-            <MessageSquare size={18} color="#000" />
-            <Text style={[styles.actionText, { color: "#000" }]}>WhatsApp</Text>
-          </TouchableOpacity>
+          <AppButton
+            label="Call"
+            onPress={openCall}
+            icon={<Phone size={18} color={colors.buttonText} />}
+            style={{ flex: 1 }}
+          />
+          <AppButton
+            label="WhatsApp"
+            variant="outline"
+            onPress={openWhatsApp}
+            icon={<MessageSquare size={18} color={colors.primary} />}
+            style={{ flex: 1 }}
+          />
         </View>
 
         {/* Bio */}
@@ -123,8 +134,8 @@ export default function MechanicProfileScreen() {
           </View>
           <View style={styles.serviceChips}>
             {mechanic.services.map((s, i) => (
-              <View key={i} style={[styles.chip, { backgroundColor: isDark ? colors.background : "#f1f5f9" }]}>
-                <Text style={[styles.chipText, { color: colors.text }]}>{s}</Text>
+              <View key={i} style={[styles.chip, { backgroundColor: isDark ? colors.background : colors.primary + "12", borderColor: colors.primary + "30", borderWidth: 1 }]}>
+                <Text style={[styles.chipText, { color: colors.primary }]}>{s}</Text>
               </View>
             ))}
           </View>
@@ -136,8 +147,11 @@ export default function MechanicProfileScreen() {
             <Phone size={18} color={colors.primary} />
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Contact</Text>
           </View>
-          <TouchableOpacity style={styles.contactRow} onPress={openCall}>
-            <Phone size={15} color={colors.subtext} />
+          <TouchableOpacity
+            style={[styles.contactRow, { backgroundColor: isDark ? colors.background : colors.primary + "08", borderRadius: Radius.md, padding: Spacing.sm }]}
+            onPress={openCall}
+          >
+            <Phone size={15} color={colors.primary} />
             <Text style={[styles.contactText, { color: colors.primary }]}>+{mechanic.phone}</Text>
           </TouchableOpacity>
         </View>
@@ -200,16 +214,17 @@ const styles = StyleSheet.create({
     padding: 20,
     gap: 16,
   },
-  heroAvatar: { width: 80, height: 80, borderRadius: 40 },
+  heroAvatar: { width: 88, height: 88, borderRadius: 44 },
   heroInfo: { flex: 1 },
   nameRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 4 },
-  heroName: { fontSize: 18, fontFamily: FontFamily.bold },
+  heroName: { fontSize: FontSize.lg, fontFamily: FontFamily.bold },
   verifiedBadge: { flexDirection: "row", alignItems: "center", gap: 4 },
-  verifiedText: { color: "#22c55e", fontSize: 12, fontFamily: FontFamily.medium },
-  heroSpecialty: { fontSize: 13, fontFamily: FontFamily.regular, marginBottom: 2 },
-  heroExp: { fontSize: 13, fontFamily: FontFamily.medium, marginBottom: 6 },
+  verifiedText: { color: "#22c55e", fontSize: FontSize.xs, fontFamily: FontFamily.medium },
+  heroSpecialty: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold, marginBottom: 6 },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: 5, marginBottom: 8, flexWrap: "wrap" },
+  metaText: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
   ratingRow: { flexDirection: "row", alignItems: "center", gap: 3 },
-  ratingLabel: { fontSize: 12, fontFamily: FontFamily.medium, marginLeft: 4 },
+  ratingLabel: { fontSize: FontSize.xs, fontFamily: FontFamily.medium, marginLeft: 4 },
 
   actionRow: {
     flexDirection: "row",
@@ -219,9 +234,13 @@ const styles = StyleSheet.create({
   },
   actionBtn: {
     flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
-    gap: 8, paddingVertical: 12, borderRadius: 12,
+    gap: 8, paddingVertical: 13, borderRadius: Radius.lg,
   },
-  actionText: { fontFamily: FontFamily.bold, fontSize: 15 },
+  actionBtnOutline: {
+    backgroundColor: "transparent",
+    borderWidth: 1.5,
+  },
+  actionText: { fontFamily: FontFamily.bold, fontSize: FontSize.sm },
 
   section: {
     marginTop: 8,
@@ -229,16 +248,16 @@ const styles = StyleSheet.create({
   },
   sectionHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 },
   sectionTitle: { fontSize: FontSize.md, fontFamily: FontFamily.bold },
-  bioText: { fontSize: 14, fontFamily: FontFamily.regular, lineHeight: 22 },
+  bioText: { fontSize: FontSize.sm, fontFamily: FontFamily.regular, lineHeight: 22 },
 
   serviceChips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  chip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
-  chipText: { fontSize: 13, fontFamily: FontFamily.medium },
+  chip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: Radius.full },
+  chipText: { fontSize: FontSize.xs, fontFamily: FontFamily.semiBold },
 
   contactRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  contactText: { fontSize: 15, fontFamily: FontFamily.medium },
+  contactText: { fontSize: FontSize.md, fontFamily: FontFamily.medium },
 
-  addressText: { fontSize: 14, fontFamily: FontFamily.regular, marginBottom: 14 },
-  mapWrapper: { borderRadius: 12, overflow: "hidden", height: 200 },
+  addressText: { fontSize: FontSize.sm, fontFamily: FontFamily.regular, marginBottom: 14 },
+  mapWrapper: { borderRadius: Radius.lg, overflow: "hidden", height: 200 },
   map: { width: "100%", height: "100%" },
 })

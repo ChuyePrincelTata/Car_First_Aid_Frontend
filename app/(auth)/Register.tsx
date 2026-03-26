@@ -23,6 +23,7 @@ import { Eye, EyeOff, CheckCircle, AlertCircle, User, Wrench } from "@/component
 import { useAuth } from "@/context/AuthContext"
 import { useTheme } from "@/context/ThemeContext"
 import { Spacing, Radius, FontSize, FontFamily, Shadows } from "@/constants/Theme"
+import AppButton from "@/components/AppButton"
 import React from "react"
 
 /* ── Password rules ──────────────────────────────────────────────────────── */
@@ -203,23 +204,6 @@ export default function RegisterScreen() {
     },
     roleText: { fontSize: FontSize.md, fontFamily: FontFamily.medium },
 
-    /* ── submit ── */
-    btn: {
-      height: 52,
-      borderRadius: Radius.lg,
-      backgroundColor: colors.primary,
-      alignItems: "center",
-      justifyContent: "center",
-      marginTop: Spacing.sm,
-      ...Shadows.md,
-    },
-    btnText: {
-      fontSize: FontSize.base,
-      fontFamily: FontFamily.bold,
-      color: colors.buttonText,
-      letterSpacing: 0.3,
-    },
-
     /* ── login link ── */
     loginRow: {
       flexDirection: "row",
@@ -373,17 +357,13 @@ export default function RegisterScreen() {
             </View>
 
             {/* Submit */}
-            <TouchableOpacity
-              style={[s.btn, isLoading && { opacity: 0.7 }]}
+            <AppButton
+              label="Create Account"
               onPress={handleRegister}
-              disabled={isLoading}
-              activeOpacity={0.85}
-            >
-              {isLoading
-                ? <ActivityIndicator color={colors.buttonText} />
-                : <Text style={s.btnText}>Create Account</Text>
-              }
-            </TouchableOpacity>
+              loading={isLoading}
+              size="lg"
+              style={{ marginTop: Spacing.sm }}
+            />
           </View>
 
           {/* ── Login link ── */}

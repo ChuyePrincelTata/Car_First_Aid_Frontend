@@ -13,6 +13,7 @@ import Animated, {
   useSharedValue, useAnimatedStyle,
   withRepeat, withTiming, withDelay, Easing, SharedValue,
 } from "react-native-reanimated"
+import AppButton from "@/components/AppButton"
 import React from "react"
 
 type VideoLink = { title: string; url: string }
@@ -210,30 +211,7 @@ export default function SoundDiagnosisScreen() {
       color: colors.tabIconDefault, textAlign: "center",
       marginTop: Spacing.md, lineHeight: 18,
     },
-
-    // Playback
-    playbackRow: {
-      flexDirection: "row", justifyContent: "center",
-      marginTop: Spacing.md, marginHorizontal: Spacing.xl, gap: Spacing.md,
-    },
-    playBtn: {
-      flex: 1, height: 48, borderRadius: Radius.lg,
-      backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border,
-      alignItems: "center", justifyContent: "center", flexDirection: "row", gap: Spacing.sm,
-    },
-    playBtnText: { fontFamily: FontFamily.semiBold, fontSize: FontSize.sm, color: colors.text },
-
-    // Analyse
-    analyzeBtn: {
-      marginHorizontal: Spacing.xl, marginTop: Spacing.md,
-      paddingVertical: 16, borderRadius: Radius.lg,
-      backgroundColor: colors.primary, alignItems: "center",
-    },
-    analyzeBtnTxt: { fontFamily: FontFamily.bold, fontSize: FontSize.md, color: colors.buttonText },
-    resetLink: { alignSelf: "center", marginTop: Spacing.sm },
-    resetTxt: { fontSize: FontSize.xs, fontFamily: FontFamily.medium, color: colors.error },
-
-    // Result card
+    // ─── Result card ───
     resultCard: {
       marginHorizontal: Spacing.xl, marginTop: Spacing.lg,
       backgroundColor: colors.card, borderRadius: Radius.xl,
@@ -272,7 +250,7 @@ export default function SoundDiagnosisScreen() {
         <View style={s.headerTop}>
           <TouchableOpacity 
             style={s.backBtn} 
-            onPress={() => router.canGoBack() ? router.back() : router.replace("/(tabs)")}
+            onPress={() => router.navigate("/(tabs)/diagnose")}
           >
             <ChevronLeft size={24} color={colors.text} />
           </TouchableOpacity>
@@ -320,23 +298,33 @@ export default function SoundDiagnosisScreen() {
 
         {/* Playback */}
         {recordingUri && !diagnosisResult && (
-          <View style={s.playbackRow}>
-            <TouchableOpacity style={s.playBtn} onPress={isPlaying ? pauseSound : playSound}>
-              {isPlaying ? <Pause size={20} color={colors.text} /> : <Play size={20} color={colors.text} />}
-              <Text style={s.playBtnText}>{isPlaying ? "Pause" : "Play Recording"}</Text>
-            </TouchableOpacity>
+          <View style={{ marginTop: Spacing.md, marginHorizontal: Spacing.xl }}>
+            <AppButton
+              label={isPlaying ? "Pause" : "Play Recording"}
+              variant="outline"
+              icon={isPlaying ? <Pause size={18} color={colors.primary} /> : <Play size={18} color={colors.primary} />}
+              onPress={isPlaying ? pauseSound : playSound}
+            />
           </View>
         )}
 
         {/* Analyse / Reset */}
         {recordingUri && !diagnosisResult && (
           <>
-            <TouchableOpacity style={s.analyzeBtn} onPress={analyzeSound}>
-              <Text style={s.analyzeBtnTxt}>Analyse Engine Sound</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={s.resetLink} onPress={resetDiagnosis}>
-              <Text style={s.resetTxt}>Discard & record again</Text>
-            </TouchableOpacity>
+            <AppButton
+              label="Analyse Engine Sound"
+              onPress={analyzeSound}
+              size="lg"
+              style={{ marginHorizontal: Spacing.xl, marginTop: Spacing.md }}
+            />
+            <AppButton
+              label="Discard & record again"
+              variant="ghost"
+              onPress={resetDiagnosis}
+              textStyle={{ color: colors.error, fontSize: FontSize.sm }}
+              fullWidth={false}
+              style={{ alignSelf: "center", marginTop: Spacing.sm }}
+            />
           </>
         )}
 
@@ -369,9 +357,14 @@ export default function SoundDiagnosisScreen() {
               </TouchableOpacity>
             ))}
 
-            <TouchableOpacity style={s.resetLink} onPress={resetDiagnosis}>
-              <Text style={s.resetTxt}>Start a New Diagnosis</Text>
-            </TouchableOpacity>
+            <AppButton
+              label="Start a New Diagnosis"
+              variant="ghost"
+              onPress={resetDiagnosis}
+              textStyle={{ color: colors.error, fontSize: FontSize.sm }}
+              fullWidth={false}
+              style={{ alignSelf: "center", marginTop: Spacing.md }}
+            />
           </View>
         )}
       </ScrollView>

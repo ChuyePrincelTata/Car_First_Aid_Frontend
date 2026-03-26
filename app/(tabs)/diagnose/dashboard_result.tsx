@@ -133,7 +133,7 @@ export default function DashboardLightResultScreen() {
         style={styles(colors).header}
       >
         <View style={styles(colors).headerContent}>
-          <Pressable onPress={() => router.back()} style={styles(colors).backButton}>
+          <Pressable onPress={() => router.navigate("/(tabs)/diagnose")} style={styles(colors).backButton}>
             <ChevronLeft color="white" size={24} />
           </Pressable>
           <Text style={styles(colors).headerTitle}>Diagnostic Result</Text>

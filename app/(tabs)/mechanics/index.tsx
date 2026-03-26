@@ -10,6 +10,7 @@ import { useRouter } from "expo-router"
 import { Mechanic, mockMechanics } from "@/data/mockData"
 import { FontFamily, FontSize } from "@/constants/Theme"
 import ScreenHeader, { SCREEN_HEADER_H } from "@/components/ScreenHeader"
+import AppButton from "@/components/AppButton"
 
 const GOLD = "#F59E0B"
 
@@ -55,7 +56,11 @@ export default function MechanicsScreen() {
           <Text style={styles.verifiedText}>Verified</Text>
         </View>
       )}
-      <View style={styles.cardHeader}>
+      <TouchableOpacity
+        style={styles.cardHeader}
+        activeOpacity={0.7}
+        onPress={() => router.push({ pathname: "/(tabs)/mechanics/[id]", params: { id: item.id } })}
+      >
         <Image source={{ uri: item.avatar }} style={styles.avatar} />
         <View style={styles.cardInfo}>
           <Text style={[styles.name, { color: colors.text }]}>{item.name}</Text>
@@ -68,24 +73,28 @@ export default function MechanicsScreen() {
             </Text>
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
       <View style={[styles.locationRow, { borderTopColor: colors.border }]}>
         <MapPin size={14} color={colors.subtext} />
         <Text style={[styles.locationText, { color: colors.subtext }]}>{item.location}</Text>
       </View>
       <View style={[styles.actionsRow, { borderTopColor: colors.border }]}>
-        <TouchableOpacity
-          style={styles.actionBtn}
+        <AppButton
+          label="Profile"
+          variant="ghost"
+          icon={<User size={16} color={colors.text} />}
           onPress={() => router.push({ pathname: "/(tabs)/mechanics/[id]", params: { id: item.id } })}
-        >
-          <User size={16} color={colors.text} />
-          <Text style={[styles.actionText, { color: colors.text }]}>Profile</Text>
-        </TouchableOpacity>
+          style={{ flex: 1, height: 48 }}
+          textStyle={{ color: colors.text }}
+        />
         <View style={[styles.vDivider, { backgroundColor: colors.border }]} />
-        <TouchableOpacity style={styles.actionBtn} onPress={() => openWhatsApp(item)}>
-          <MessageSquare size={16} color={GOLD} />
-          <Text style={[styles.actionText, { color: GOLD }]}>Message</Text>
-        </TouchableOpacity>
+        <AppButton
+          label="Message"
+          variant="ghost"
+          icon={<MessageSquare size={16} color={colors.primary} />}
+          onPress={() => openWhatsApp(item)}
+          style={{ flex: 1, height: 48 }}
+        />
       </View>
     </View>
   )
@@ -184,11 +193,6 @@ const styles = StyleSheet.create({
   },
   locationText: { fontSize: 13, fontFamily: FontFamily.regular, flex: 1 },
   actionsRow: { flexDirection: "row", borderTopWidth: StyleSheet.hairlineWidth },
-  actionBtn: {
-    flex: 1, flexDirection: "row", alignItems: "center",
-    justifyContent: "center", gap: 6, paddingVertical: 12,
-  },
-  actionText: { fontFamily: FontFamily.medium, fontSize: 14 },
   vDivider: { width: StyleSheet.hairlineWidth },
   emptyBox: { alignItems: "center", paddingTop: 60, gap: 12 },
   emptyText: { fontSize: 15, fontFamily: FontFamily.medium, textAlign: "center" },
