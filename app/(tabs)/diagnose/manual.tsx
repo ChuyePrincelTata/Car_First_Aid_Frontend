@@ -10,6 +10,8 @@ import { useRouter } from "expo-router"
 import { FontFamily, FontSize, Spacing, Radius } from "@/constants/Theme"
 import AppButton from "@/components/AppButton"
 import React from "react"
+import { useDiagnosticsContext } from "@/context/DiagnosticsContext"
+import { createDiagnosticHistoryItem } from "@/utils/diagnosticHistory"
 
 type VideoLink = { title: string; url: string }
 
@@ -21,6 +23,7 @@ export default function ManualDiagnosisScreen() {
   const [diagnosisResult, setDiagnosisResult] = useState<any>(null)
   const { colors, isDark } = useTheme()
   const insets = useSafeAreaInsets()
+  const { addDiagnostic } = useDiagnosticsContext()
 
   const analyzeProblem = () => {
     if (!description.trim() || !symptoms.trim()) {
@@ -29,10 +32,11 @@ export default function ManualDiagnosisScreen() {
     }
     setDiagnosing(true)
     setTimeout(() => {
-      setDiagnosisResult({
+      const result = {
         issue: "Potential Transmission Problem",
         description: "Based on the symptoms described, your vehicle may be experiencing transmission-related issues. The combination of shifting difficulties and unusual noises suggests potential wear in the transmission system.",
         severity: "Medium",
+        confidence: 82,
         recommendations: [
           "Check transmission fluid level and condition",
           "Inspect for transmission fluid leaks",
@@ -43,7 +47,16 @@ export default function ManualDiagnosisScreen() {
           { title: "How to Check Transmission Fluid", url: "https://www.youtube.com/watch?v=example1" },
           { title: "Common Transmission Problems", url: "https://www.youtube.com/watch?v=example2" },
         ],
-      })
+      }
+      setDiagnosisResult(result)
+      addDiagnostic(
+        createDiagnosticHistoryItem({
+          type: "manual",
+          title: "Manual Diagnosis",
+          result,
+          inputSummary: `Problem: ${description.trim()}\nSymptoms: ${symptoms.trim()}`,
+        }),
+      )
       setDiagnosing(false)
     }, 3000)
   }
