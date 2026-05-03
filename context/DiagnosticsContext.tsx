@@ -1,6 +1,9 @@
 
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { Platform } from "react-native"
+import * as SQLite from "expo-sqlite"
+import * as SecureStore from "expo-secure-store"
 import React from "react"
 
 // Types for your existing diagnostic system
@@ -14,16 +17,20 @@ export type DiagnosticResult = {
   confidence: number
   description: string
   recommendation: string
+  recommendations?: string[]
   severity: "low" | "medium" | "high"
   videoLinks?: VideoLink[]
 }
 
 export type Diagnostic = {
   id: string
-  type: "engine" | "dashboard"
+  type: "engine" | "dashboard" | "manual" | "sound"
   title: string
   date: string
   status: "pending" | "completed"
+  resolved?: boolean
+  sourceUri?: string
+  inputSummary?: string
   result?: DiagnosticResult
 }
 
@@ -54,6 +61,9 @@ export type DiagnosticsContextType = {
   history: Diagnostic[]
   addDiagnostic: (diagnostic: Diagnostic) => void
   getDiagnosticById: (id: string) => Diagnostic | null
+  toggleDiagnosticResolved: (id: string) => void
+  deleteDiagnostic: (id: string) => void
+  clearDiagnosticHistory: () => void
 
   // Extended vehicle diagnostics functionality
   diagnosticCodes: DiagnosticCode[]
@@ -77,11 +87,61 @@ export type DiagnosticsContextType = {
 
 // Create context
 const DiagnosticsContext = createContext<DiagnosticsContextType | undefined>(undefined)
+const HISTORY_STORAGE_KEY = "diagnostic_history"
+
+let storageDb: SQLite.SQLiteDatabase | null = null
+
+const getStorageDb = async () => {
+  if (!storageDb) {
+    storageDb = await SQLite.openDatabaseAsync("carfirstaid.db")
+    await storageDb.execAsync(`
+      CREATE TABLE IF NOT EXISTS app_storage (
+        key TEXT PRIMARY KEY NOT NULL,
+        value TEXT NOT NULL
+      );
+    `)
+  }
+
+  return storageDb
+}
+
+const historyStorage = {
+  getItemAsync: async (key: string) => {
+    if (Platform.OS === "web") return localStorage.getItem(key)
+
+    const db = await getStorageDb()
+    const row = await db.getFirstAsync<{ value: string }>("SELECT value FROM app_storage WHERE key = ?", key)
+    return row?.value ?? null
+  },
+  setItemAsync: async (key: string, value: string) => {
+    if (Platform.OS === "web") {
+      localStorage.setItem(key, value)
+      return
+    }
+
+    const db = await getStorageDb()
+    await db.runAsync(
+      "INSERT OR REPLACE INTO app_storage (key, value) VALUES (?, ?)",
+      key,
+      value,
+    )
+  },
+  deleteItemAsync: async (key: string) => {
+    if (Platform.OS === "web") {
+      localStorage.removeItem(key)
+      return
+    }
+
+    const db = await getStorageDb()
+    await db.runAsync("DELETE FROM app_storage WHERE key = ?", key)
+  },
+}
 
 // Provider component
 export function DiagnosticsProvider({ children }: { children: ReactNode }) {
   // Original diagnostic history state
   const [history, setHistory] = useState<Diagnostic[]>([])
+  const [historyLoaded, setHistoryLoaded] = useState(false)
 
   // Extended vehicle diagnostics state
   const [diagnosticCodes, setDiagnosticCodes] = useState<DiagnosticCode[]>([])
@@ -96,63 +156,117 @@ export function DiagnosticsProvider({ children }: { children: ReactNode }) {
   // Computed values
   const activeCodes = diagnosticCodes.filter((code) => code.isActive)
 
-  // Initialize with sample data
+  // Initialize history from storage, falling back to sample data for a fresh install.
   useEffect(() => {
-    setHistory([
-      {
-        id: "1",
-        type: "engine",
-        title: "Engine Sound Analysis",
-        date: "2023-09-15T14:48:00.000Z",
-        status: "completed",
-        result: {
-          issue: "Timing Belt Noise",
-          confidence: 92,
-          description:
-            "The audio analysis detected sounds consistent with a worn timing belt or tensioner. This can lead to engine performance issues if not addressed.",
-          recommendation:
-            "Have your timing belt and tensioner inspected and replaced if necessary. This is a critical maintenance item.",
-          severity: "medium",
-          videoLinks: [
-            {
-              title: "How to Diagnose Timing Belt Noise",
-              url: "https://www.youtube.com/watch?v=example1",
-            },
-          ],
+    const loadHistory = async () => {
+      let storedHistory = await historyStorage.getItemAsync(HISTORY_STORAGE_KEY)
+
+      if (!storedHistory && Platform.OS !== "web") {
+        storedHistory = await SecureStore.getItemAsync(HISTORY_STORAGE_KEY)
+        if (storedHistory) {
+          await historyStorage.setItemAsync(HISTORY_STORAGE_KEY, storedHistory)
+          await SecureStore.deleteItemAsync(HISTORY_STORAGE_KEY)
+        }
+      }
+
+      if (storedHistory) {
+        setHistory(JSON.parse(storedHistory))
+        setHistoryLoaded(true)
+        return
+      }
+
+      setHistory([
+        {
+          id: "1",
+          type: "engine",
+          title: "Engine Sound Analysis",
+          date: "2023-09-15T14:48:00.000Z",
+          status: "completed",
+          resolved: false,
+          result: {
+            issue: "Timing Belt Noise",
+            confidence: 92,
+            description:
+              "The audio analysis detected sounds consistent with a worn timing belt or tensioner. This can lead to engine performance issues if not addressed.",
+            recommendation:
+              "Have your timing belt and tensioner inspected and replaced if necessary. This is a critical maintenance item.",
+            recommendations: [
+              "Inspect the timing belt and tensioner.",
+              "Avoid long trips until a mechanic confirms the condition.",
+            ],
+            severity: "medium",
+            videoLinks: [
+              {
+                title: "How to Diagnose Timing Belt Noise",
+                url: "https://www.youtube.com/watch?v=example1",
+              },
+            ],
+          },
         },
-      },
-      {
-        id: "2",
-        type: "dashboard",
-        title: "Dashboard Light Check",
-        date: "2023-09-10T10:30:00.000Z",
-        status: "completed",
-        result: {
-          issue: "Check Engine Light",
-          confidence: 98,
-          description:
-            "The check engine light indicates an issue with your engine or emissions system that needs attention.",
-          recommendation:
-            "Connect an OBD-II scanner to retrieve the specific error code. Common causes include oxygen sensor failure, loose gas cap, or catalytic converter issues.",
-          severity: "medium",
-          videoLinks: [
-            {
-              title: "Understanding Check Engine Light",
-              url: "https://www.youtube.com/watch?v=example2",
-            },
-          ],
+        {
+          id: "2",
+          type: "dashboard",
+          title: "Dashboard Light Check",
+          date: "2023-09-10T10:30:00.000Z",
+          status: "completed",
+          resolved: false,
+          result: {
+            issue: "Check Engine Light",
+            confidence: 98,
+            description:
+              "The check engine light indicates an issue with your engine or emissions system that needs attention.",
+            recommendation:
+              "Connect an OBD-II scanner to retrieve the specific error code. Common causes include oxygen sensor failure, loose gas cap, or catalytic converter issues.",
+            recommendations: [
+              "Confirm the gas cap is tight.",
+              "Use an OBD-II scanner to read the exact code.",
+            ],
+            severity: "medium",
+            videoLinks: [
+              {
+                title: "Understanding Check Engine Light",
+                url: "https://www.youtube.com/watch?v=example2",
+              },
+            ],
+          },
         },
-      },
-    ])
+      ])
+      setHistoryLoaded(true)
+    }
+
+    loadHistory().catch((err) => {
+      console.error("Failed to load diagnostic history:", err)
+      setHistoryLoaded(true)
+    })
   }, [])
+
+  useEffect(() => {
+    if (!historyLoaded) return
+
+    historyStorage
+      .setItemAsync(HISTORY_STORAGE_KEY, JSON.stringify(history))
+      .catch((err) => console.error("Failed to save diagnostic history:", err))
+  }, [history, historyLoaded])
 
   // Original functions
   const addDiagnostic = (diagnostic: Diagnostic) => {
-    setHistory((prev) => [diagnostic, ...prev])
+    setHistory((prev) => [diagnostic, ...prev.filter((item) => item.id !== diagnostic.id)])
   }
 
   const getDiagnosticById = (id: string) => {
     return history.find((item) => item.id === id) || null
+  }
+
+  const toggleDiagnosticResolved = (id: string) => {
+    setHistory((prev) => prev.map((item) => (item.id === id ? { ...item, resolved: !item.resolved } : item)))
+  }
+
+  const deleteDiagnostic = (id: string) => {
+    setHistory((prev) => prev.filter((item) => item.id !== id))
+  }
+
+  const clearDiagnosticHistory = () => {
+    setHistory([])
   }
 
   // Extended functions
@@ -264,6 +378,9 @@ export function DiagnosticsProvider({ children }: { children: ReactNode }) {
     history,
     addDiagnostic,
     getDiagnosticById,
+    toggleDiagnosticResolved,
+    deleteDiagnostic,
+    clearDiagnosticHistory,
 
     // Extended functionality
     diagnosticCodes,
