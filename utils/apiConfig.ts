@@ -129,15 +129,22 @@ export const fetchWithTimeout = async (
 ): Promise<Response> => {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), timeout)
+  const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData
+  const defaultHeaders: Record<string, string> = isFormData
+    ? { Accept: "application/json" }
+    : {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      }
+  const requestHeaders = options.headers as Record<string, string> | undefined
 
   try {
     const response = await fetch(url, {
       ...options,
       signal: controller.signal,
       headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        ...options.headers,
+        ...defaultHeaders,
+        ...requestHeaders,
       },
     })
     clearTimeout(timeoutId)

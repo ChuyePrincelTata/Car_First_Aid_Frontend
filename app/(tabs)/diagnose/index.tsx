@@ -8,13 +8,15 @@ import { useTheme } from "@/context/ThemeContext"
 import ScreenHeader, { SCREEN_HEADER_H } from "@/components/ScreenHeader"
 import * as ImagePicker from "expo-image-picker"
 import { useRouter } from "expo-router"
-import { getApiBaseUrl } from "@/utils/apiConfig"
+import { fetchWithTimeout, getApiBaseUrl } from "@/utils/apiConfig"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { FontFamily, FontSize, Spacing, Radius } from "@/constants/Theme"
 import { useWhatsAppCropper } from "@/hooks/useWhatsAppCropper"
 import AppButton from "@/components/AppButton"
 import { useLocalSearchParams } from "expo-router"
 import React, { useEffect } from "react"
+import { useDiagnosticsContext } from "@/context/DiagnosticsContext"
+import { createDiagnosticHistoryItem } from "@/utils/diagnosticHistory"
 
 const { width } = Dimensions.get("window")
 
@@ -33,6 +35,7 @@ export default function DiagnoseScreen() {
   const router = useRouter()
   const params = useLocalSearchParams<{ croppedUri?: string }>()
   const { launchCamera, launchCropper } = useWhatsAppCropper()
+  const { addDiagnostic } = useDiagnosticsContext()
 
   // Listen for the returning cropped URI from our Expo Go JS fallback cropper
   useEffect(() => {
@@ -74,15 +77,24 @@ export default function DiagnoseScreen() {
       const apiUrl = `${baseUrl}/diagnostics/analyze-dashboard`
       const formData = new FormData()
       formData.append("image", { uri: image, type: "image/jpeg", name: "dashboard.jpg" } as any)
-      const response = await fetch(apiUrl, {
+      const response = await fetchWithTimeout(apiUrl, {
         method: "POST",
         body: formData,
-        headers: { "Content-Type": "multipart/form-data" },
-      })
+      }, 30000)
       if (!response.ok) throw new Error(`Upload failed: ${response.status}`)
-      setDiagnosisResult(await response.json())
+      const result = await response.json()
+      setDiagnosisResult(result)
+      addDiagnostic(
+        createDiagnosticHistoryItem({
+          type: "dashboard",
+          title: "Dashboard Light Check",
+          result,
+          sourceUri: image,
+          inputSummary: "Dashboard warning light photo attached",
+        }),
+      )
     } catch {
-      setDiagnosisResult({
+      const fallbackResult = {
         issue: "Check Engine Light",
         description: "The check engine light indicates a problem with the engine or emissions system. Common causes include a loose gas cap, faulty oxygen sensor, or catalytic converter issues.",
         severity: "Medium",
@@ -96,7 +108,17 @@ export default function DiagnoseScreen() {
           { title: "How to Diagnose Check Engine Light", url: "https://www.youtube.com/watch?v=example1" },
           { title: "Common Check Engine Light Causes", url: "https://www.youtube.com/watch?v=example2" },
         ],
-      })
+      }
+      setDiagnosisResult(fallbackResult)
+      addDiagnostic(
+        createDiagnosticHistoryItem({
+          type: "dashboard",
+          title: "Dashboard Light Check",
+          result: fallbackResult,
+          sourceUri: image,
+          inputSummary: "Dashboard warning light photo attached",
+        }),
+      )
     } finally {
       setDiagnosing(false)
     }

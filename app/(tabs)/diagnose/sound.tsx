@@ -15,6 +15,8 @@ import Animated, {
 } from "react-native-reanimated"
 import AppButton from "@/components/AppButton"
 import React from "react"
+import { useDiagnosticsContext } from "@/context/DiagnosticsContext"
+import { createDiagnosticHistoryItem } from "@/utils/diagnosticHistory"
 
 type VideoLink = { title: string; url: string }
 
@@ -32,6 +34,7 @@ export default function SoundDiagnosisScreen() {
   const { colors, isDark } = useTheme()
   const insets = useSafeAreaInsets()
   const recorderTimer = useRef<NodeJS.Timeout | number | null>(null)
+  const { addDiagnostic } = useDiagnosticsContext()
 
   // Waveform animations
   const a1 = useSharedValue(0)
@@ -121,10 +124,11 @@ export default function SoundDiagnosisScreen() {
   const analyzeSound = () => {
     setDiagnosing(true)
     setTimeout(() => {
-      setDiagnosisResult({
+      const result = {
         issue: "Engine Knock",
         description: "The recorded sound indicates engine knocking, typically caused by pre-ignition or detonation in the combustion chamber. This may be due to low fuel octane, carbon buildup, or failing spark plugs.",
         severity: "High",
+        confidence: 87,
         recommendations: [
           "Check and replace spark plugs if necessary",
           "Use higher octane fuel as recommended by your manufacturer",
@@ -135,7 +139,17 @@ export default function SoundDiagnosisScreen() {
           { title: "How to Fix Engine Knocking", url: "https://www.youtube.com/watch?v=example3" },
           { title: "Replacing Spark Plugs Tutorial", url: "https://www.youtube.com/watch?v=example4" },
         ],
-      })
+      }
+      setDiagnosisResult(result)
+      addDiagnostic(
+        createDiagnosticHistoryItem({
+          type: "engine",
+          title: "Engine Sound Analysis",
+          result,
+          sourceUri: recordingUri ?? undefined,
+          inputSummary: `Audio recording attached (${fmt(recordingDuration)})`,
+        }),
+      )
       setDiagnosing(false)
     }, 3000)
   }
