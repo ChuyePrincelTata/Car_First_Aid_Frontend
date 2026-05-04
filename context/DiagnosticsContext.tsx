@@ -90,28 +90,52 @@ const DiagnosticsContext = createContext<DiagnosticsContextType | undefined>(und
 const HISTORY_STORAGE_KEY = "diagnostic_history"
 
 let storageDb: SQLite.SQLiteDatabase | null = null
+let dbInitPromise: Promise<SQLite.SQLiteDatabase> | null = null
 
 const getStorageDb = async () => {
-  if (!storageDb) {
-    storageDb = await SQLite.openDatabaseAsync("carfirstaid.db")
-    await storageDb.execAsync(`
-      CREATE TABLE IF NOT EXISTS app_storage (
-        key TEXT PRIMARY KEY NOT NULL,
-        value TEXT NOT NULL
-      );
-    `)
+  if (storageDb) {
+    return storageDb
   }
 
-  return storageDb
+  if (dbInitPromise) {
+    return dbInitPromise
+  }
+
+  dbInitPromise = (async () => {
+    try {
+      const db = await SQLite.openDatabaseAsync("carfirstaid.db")
+
+      // Ensure table exists
+      await db.execAsync(`
+        CREATE TABLE IF NOT EXISTS app_storage (
+          key TEXT PRIMARY KEY NOT NULL,
+          value TEXT NOT NULL
+        );
+      `)
+
+      storageDb = db
+      return db
+    } catch (error) {
+      console.error("Database initialization error:", error)
+      throw error
+    }
+  })()
+
+  return dbInitPromise
 }
 
 const historyStorage = {
   getItemAsync: async (key: string) => {
     if (Platform.OS === "web") return localStorage.getItem(key)
 
-    const db = await getStorageDb()
-    const row = await db.getFirstAsync<{ value: string }>("SELECT value FROM app_storage WHERE key = ?", key)
-    return row?.value ?? null
+    try {
+      const db = await getStorageDb()
+      const row = await db.getFirstAsync<{ value: string }>("SELECT value FROM app_storage WHERE key = ?", [key])
+      return row?.value ?? null
+    } catch (error) {
+      console.error("Error retrieving from storage:", error)
+      return null
+    }
   },
   setItemAsync: async (key: string, value: string) => {
     if (Platform.OS === "web") {
@@ -119,12 +143,16 @@ const historyStorage = {
       return
     }
 
-    const db = await getStorageDb()
-    await db.runAsync(
-      "INSERT OR REPLACE INTO app_storage (key, value) VALUES (?, ?)",
-      key,
-      value,
-    )
+    try {
+      const db = await getStorageDb()
+      await db.runAsync(
+        "INSERT OR REPLACE INTO app_storage (key, value) VALUES (?, ?)",
+        [key, value],
+      )
+    } catch (error) {
+      console.error("Error saving to storage:", error)
+      throw error
+    }
   },
   deleteItemAsync: async (key: string) => {
     if (Platform.OS === "web") {
@@ -132,8 +160,13 @@ const historyStorage = {
       return
     }
 
-    const db = await getStorageDb()
-    await db.runAsync("DELETE FROM app_storage WHERE key = ?", key)
+    try {
+      const db = await getStorageDb()
+      await db.runAsync("DELETE FROM app_storage WHERE key = ?", [key])
+    } catch (error) {
+      console.error("Error deleting from storage:", error)
+      throw error
+    }
   },
 }
 
@@ -159,93 +192,123 @@ export function DiagnosticsProvider({ children }: { children: ReactNode }) {
   // Initialize history from storage, falling back to sample data for a fresh install.
   useEffect(() => {
     const loadHistory = async () => {
-      let storedHistory = await historyStorage.getItemAsync(HISTORY_STORAGE_KEY)
-
-      if (!storedHistory && Platform.OS !== "web") {
-        storedHistory = await SecureStore.getItemAsync(HISTORY_STORAGE_KEY)
-        if (storedHistory) {
-          await historyStorage.setItemAsync(HISTORY_STORAGE_KEY, storedHistory)
-          await SecureStore.deleteItemAsync(HISTORY_STORAGE_KEY)
+      try {
+        // Pre-initialize database on native platforms
+        if (Platform.OS !== "web") {
+          try {
+            await getStorageDb()
+          } catch (dbError) {
+            console.warn("Database initialization warning, will use in-memory storage:", dbError)
+          }
         }
-      }
 
-      if (storedHistory) {
-        setHistory(JSON.parse(storedHistory))
+        let storedHistory = await historyStorage.getItemAsync(HISTORY_STORAGE_KEY)
+
+        if (!storedHistory && Platform.OS !== "web") {
+          try {
+            storedHistory = await SecureStore.getItemAsync(HISTORY_STORAGE_KEY)
+            if (storedHistory) {
+              await historyStorage.setItemAsync(HISTORY_STORAGE_KEY, storedHistory)
+              await SecureStore.deleteItemAsync(HISTORY_STORAGE_KEY)
+            }
+          } catch (secureStoreError) {
+            console.warn("SecureStore access failed:", secureStoreError)
+          }
+        }
+
+        if (storedHistory) {
+          try {
+            setHistory(JSON.parse(storedHistory))
+            setHistoryLoaded(true)
+            return
+          } catch (parseError) {
+            console.error("Failed to parse stored history:", parseError)
+          }
+        }
+
+        setHistory([
+          {
+            id: "1",
+            type: "engine",
+            title: "Engine Sound Analysis",
+            date: "2023-09-15T14:48:00.000Z",
+            status: "completed",
+            resolved: false,
+            result: {
+              issue: "Timing Belt Noise",
+              confidence: 92,
+              description:
+                "The audio analysis detected sounds consistent with a worn timing belt or tensioner. This can lead to engine performance issues if not addressed.",
+              recommendation:
+                "Have your timing belt and tensioner inspected and replaced if necessary. This is a critical maintenance item.",
+              recommendations: [
+                "Inspect the timing belt and tensioner.",
+                "Avoid long trips until a mechanic confirms the condition.",
+              ],
+              severity: "medium",
+              videoLinks: [
+                {
+                  title: "How to Diagnose Timing Belt Noise",
+                  url: "https://www.youtube.com/watch?v=example1",
+                },
+              ],
+            },
+          },
+          {
+            id: "2",
+            type: "dashboard",
+            title: "Dashboard Light Check",
+            date: "2023-09-10T10:30:00.000Z",
+            status: "completed",
+            resolved: false,
+            result: {
+              issue: "Check Engine Light",
+              confidence: 98,
+              description:
+                "The check engine light indicates an issue with your engine or emissions system that needs attention.",
+              recommendation:
+                "Connect an OBD-II scanner to retrieve the specific error code. Common causes include oxygen sensor failure, loose gas cap, or catalytic converter issues.",
+              recommendations: [
+                "Confirm the gas cap is tight.",
+                "Use an OBD-II scanner to read the exact code.",
+              ],
+              severity: "medium",
+              videoLinks: [
+                {
+                  title: "Understanding Check Engine Light",
+                  url: "https://www.youtube.com/watch?v=example2",
+                },
+              ],
+            },
+          },
+        ])
         setHistoryLoaded(true)
-        return
       }
-
-      setHistory([
-        {
-          id: "1",
-          type: "engine",
-          title: "Engine Sound Analysis",
-          date: "2023-09-15T14:48:00.000Z",
-          status: "completed",
-          resolved: false,
-          result: {
-            issue: "Timing Belt Noise",
-            confidence: 92,
-            description:
-              "The audio analysis detected sounds consistent with a worn timing belt or tensioner. This can lead to engine performance issues if not addressed.",
-            recommendation:
-              "Have your timing belt and tensioner inspected and replaced if necessary. This is a critical maintenance item.",
-            recommendations: [
-              "Inspect the timing belt and tensioner.",
-              "Avoid long trips until a mechanic confirms the condition.",
-            ],
-            severity: "medium",
-            videoLinks: [
-              {
-                title: "How to Diagnose Timing Belt Noise",
-                url: "https://www.youtube.com/watch?v=example1",
-              },
-            ],
-          },
-        },
-        {
-          id: "2",
-          type: "dashboard",
-          title: "Dashboard Light Check",
-          date: "2023-09-10T10:30:00.000Z",
-          status: "completed",
-          resolved: false,
-          result: {
-            issue: "Check Engine Light",
-            confidence: 98,
-            description:
-              "The check engine light indicates an issue with your engine or emissions system that needs attention.",
-            recommendation:
-              "Connect an OBD-II scanner to retrieve the specific error code. Common causes include oxygen sensor failure, loose gas cap, or catalytic converter issues.",
-            recommendations: [
-              "Confirm the gas cap is tight.",
-              "Use an OBD-II scanner to read the exact code.",
-            ],
-            severity: "medium",
-            videoLinks: [
-              {
-                title: "Understanding Check Engine Light",
-                url: "https://www.youtube.com/watch?v=example2",
-              },
-            ],
-          },
-        },
-      ])
-      setHistoryLoaded(true)
-    }
 
     loadHistory().catch((err) => {
-      console.error("Failed to load diagnostic history:", err)
-      setHistoryLoaded(true)
-    })
-  }, [])
+        console.error("Failed to load diagnostic history:", err)
+        setHistoryLoaded(true)
+      })
+    }, [])
 
   useEffect(() => {
     if (!historyLoaded) return
 
-    historyStorage
-      .setItemAsync(HISTORY_STORAGE_KEY, JSON.stringify(history))
-      .catch((err) => console.error("Failed to save diagnostic history:", err))
+    const saveHistory = async () => {
+      try {
+        await historyStorage.setItemAsync(HISTORY_STORAGE_KEY, JSON.stringify(history))
+      } catch (err) {
+        console.error("Failed to save diagnostic history:", err)
+        // History will still work in-memory, just warn the user
+      }
+    }
+
+    // Debounce saves to avoid excessive database writes
+    const timer = setTimeout(() => {
+      saveHistory()
+    }, 1000)
+
+    return () => clearTimeout(timer)
   }, [history, historyLoaded])
 
   // Original functions
