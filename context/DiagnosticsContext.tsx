@@ -283,12 +283,13 @@ export function DiagnosticsProvider({ children }: { children: ReactNode }) {
           },
         ])
         setHistoryLoaded(true)
-      }
-
-    loadHistory().catch((err) => {
+      } catch (err) {
         console.error("Failed to load diagnostic history:", err)
         setHistoryLoaded(true)
-      })
+      }
+    }
+
+    loadHistory()
     }, [])
 
   useEffect(() => {
