@@ -22,6 +22,7 @@ import {
 import { FontFamily, FontSize, Radius, Spacing } from "@/constants/Theme"
 import { useDiagnosticsContext, type Diagnostic } from "@/context/DiagnosticsContext"
 import { useTheme } from "@/context/ThemeContext"
+import { getSafeVideoUrl } from "@/utils/diagnosticHistory"
 
 const typeLabel: Record<Diagnostic["type"], string> = {
   dashboard: "Dashboard Photo",
@@ -81,8 +82,8 @@ export default function DiagnosisDetailScreen() {
     return <FileText size={size} color={colors.primary} />
   }
 
-  const openVideo = (url: string) => {
-    Linking.openURL(url).catch(() => {
+  const openVideo = (link: { title: string; url: string }) => {
+    Linking.openURL(getSafeVideoUrl(link, result?.issue)).catch(() => {
       Alert.alert("Could not open link", "Please check your connection and try again.")
     })
   }
@@ -208,7 +209,7 @@ export default function DiagnosisDetailScreen() {
               <TouchableOpacity
                 key={`${link.url}-${index}`}
                 style={[styles.videoLink, { backgroundColor: isDark ? colors.primary + "12" : colors.primary + "08" }]}
-                onPress={() => openVideo(link.url)}
+                onPress={() => openVideo(link)}
               >
                 <Text style={[styles.videoTxt, { color: colors.primary }]}>{link.title}</Text>
                 <ExternalLink size={18} color={colors.primary} />
