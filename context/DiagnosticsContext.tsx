@@ -2,9 +2,10 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import { Platform } from "react-native"
-import * as SQLite from "expo-sqlite"
+import * as FileSystem from "expo-file-system/legacy"
 import * as SecureStore from "expo-secure-store"
 import React from "react"
+import { getFallbackVideoLinks } from "@/utils/diagnosticHistory"
 
 // Types for your existing diagnostic system
 export type VideoLink = {
@@ -88,50 +89,18 @@ export type DiagnosticsContextType = {
 // Create context
 const DiagnosticsContext = createContext<DiagnosticsContextType | undefined>(undefined)
 const HISTORY_STORAGE_KEY = "diagnostic_history"
-
-let storageDb: SQLite.SQLiteDatabase | null = null
-let dbInitPromise: Promise<SQLite.SQLiteDatabase> | null = null
-
-const getStorageDb = async () => {
-  if (storageDb) {
-    return storageDb
-  }
-
-  if (dbInitPromise) {
-    return dbInitPromise
-  }
-
-  dbInitPromise = (async () => {
-    try {
-      const db = await SQLite.openDatabaseAsync("carfirstaid.db")
-
-      // Ensure table exists
-      await db.execAsync(`
-        CREATE TABLE IF NOT EXISTS app_storage (
-          key TEXT PRIMARY KEY NOT NULL,
-          value TEXT NOT NULL
-        );
-      `)
-
-      storageDb = db
-      return db
-    } catch (error) {
-      console.error("Database initialization error:", error)
-      throw error
-    }
-  })()
-
-  return dbInitPromise
-}
+const HISTORY_FILE_URI = `${FileSystem.documentDirectory ?? ""}diagnostic-history.json`
 
 const historyStorage = {
   getItemAsync: async (key: string) => {
     if (Platform.OS === "web") return localStorage.getItem(key)
+    if (key !== HISTORY_STORAGE_KEY || !FileSystem.documentDirectory) return null
 
     try {
-      const db = await getStorageDb()
-      const row = await db.getFirstAsync<{ value: string }>("SELECT value FROM app_storage WHERE key = ?", [key])
-      return row?.value ?? null
+      const fileInfo = await FileSystem.getInfoAsync(HISTORY_FILE_URI)
+      if (!fileInfo.exists) return null
+
+      return FileSystem.readAsStringAsync(HISTORY_FILE_URI)
     } catch (error) {
       console.error("Error retrieving from storage:", error)
       return null
@@ -142,13 +111,10 @@ const historyStorage = {
       localStorage.setItem(key, value)
       return
     }
+    if (key !== HISTORY_STORAGE_KEY || !FileSystem.documentDirectory) return
 
     try {
-      const db = await getStorageDb()
-      await db.runAsync(
-        "INSERT OR REPLACE INTO app_storage (key, value) VALUES (?, ?)",
-        [key, value],
-      )
+      await FileSystem.writeAsStringAsync(HISTORY_FILE_URI, value)
     } catch (error) {
       console.error("Error saving to storage:", error)
       throw error
@@ -159,10 +125,11 @@ const historyStorage = {
       localStorage.removeItem(key)
       return
     }
+    if (key !== HISTORY_STORAGE_KEY || !FileSystem.documentDirectory) return
 
     try {
-      const db = await getStorageDb()
-      await db.runAsync("DELETE FROM app_storage WHERE key = ?", [key])
+      const fileInfo = await FileSystem.getInfoAsync(HISTORY_FILE_URI)
+      if (fileInfo.exists) await FileSystem.deleteAsync(HISTORY_FILE_URI)
     } catch (error) {
       console.error("Error deleting from storage:", error)
       throw error
@@ -193,15 +160,6 @@ export function DiagnosticsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const loadHistory = async () => {
       try {
-        // Pre-initialize database on native platforms
-        if (Platform.OS !== "web") {
-          try {
-            await getStorageDb()
-          } catch (dbError) {
-            console.warn("Database initialization warning, will use in-memory storage:", dbError)
-          }
-        }
-
         let storedHistory = await historyStorage.getItemAsync(HISTORY_STORAGE_KEY)
 
         if (!storedHistory && Platform.OS !== "web") {
@@ -246,12 +204,7 @@ export function DiagnosticsProvider({ children }: { children: ReactNode }) {
                 "Avoid long trips until a mechanic confirms the condition.",
               ],
               severity: "medium",
-              videoLinks: [
-                {
-                  title: "How to Diagnose Timing Belt Noise",
-                  url: "https://www.youtube.com/watch?v=example1",
-                },
-              ],
+              videoLinks: getFallbackVideoLinks("Timing Belt Noise"),
             },
           },
           {
@@ -273,12 +226,7 @@ export function DiagnosticsProvider({ children }: { children: ReactNode }) {
                 "Use an OBD-II scanner to read the exact code.",
               ],
               severity: "medium",
-              videoLinks: [
-                {
-                  title: "Understanding Check Engine Light",
-                  url: "https://www.youtube.com/watch?v=example2",
-                },
-              ],
+              videoLinks: getFallbackVideoLinks("Check Engine Light"),
             },
           },
         ])
@@ -290,7 +238,7 @@ export function DiagnosticsProvider({ children }: { children: ReactNode }) {
     }
 
     loadHistory()
-    }, [])
+  }, [])
 
   useEffect(() => {
     if (!historyLoaded) return
