@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from "react"
 import {
   StyleSheet, Text, View, TouchableOpacity,
-  ActivityIndicator, ScrollView,
+  ActivityIndicator, ScrollView, Linking, Alert,
 } from "react-native"
-import { Mic, Pause, Play, StopCircle, ChevronLeft } from "@/components/SafeLucide"
+import { ExternalLink, Mic, Pause, Play, StopCircle, ChevronLeft } from "@/components/SafeLucide"
 import { Audio } from "expo-av"
 import { useTheme } from "@/context/ThemeContext"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
@@ -16,7 +16,7 @@ import Animated, {
 import AppButton from "@/components/AppButton"
 import React from "react"
 import { useDiagnosticsContext } from "@/context/DiagnosticsContext"
-import { createDiagnosticHistoryItem } from "@/utils/diagnosticHistory"
+import { createDiagnosticHistoryItem, getFallbackVideoLinks, getSafeVideoUrl } from "@/utils/diagnosticHistory"
 
 type VideoLink = { title: string; url: string }
 
@@ -135,10 +135,7 @@ export default function SoundDiagnosisScreen() {
           "Consider a carbon cleaning service for your engine",
           "Have engine timing checked by a professional",
         ],
-        videoLinks: [
-          { title: "How to Fix Engine Knocking", url: "https://www.youtube.com/watch?v=example3" },
-          { title: "Replacing Spark Plugs Tutorial", url: "https://www.youtube.com/watch?v=example4" },
-        ],
+        videoLinks: getFallbackVideoLinks("Engine Knock"),
       }
       setDiagnosisResult(result)
       addDiagnostic(
@@ -170,6 +167,12 @@ export default function SoundDiagnosisScreen() {
   }
 
   const fmt = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`
+
+  const openVideo = (link: VideoLink, issue?: string) => {
+    Linking.openURL(getSafeVideoUrl(link, issue)).catch(() => {
+      Alert.alert("Could not open link", "Please check your connection and try again.")
+    })
+  }
 
   const severityColor = (s: string) =>
     s === "High" || s === "Critical" ? "#ef4444" : s === "Medium" ? "#f59e0b" : "#22c55e"
@@ -365,9 +368,10 @@ export default function SoundDiagnosisScreen() {
 
             <Text style={s.sectionLabel}>Helpful Videos</Text>
             {diagnosisResult.videoLinks.map((l: VideoLink, i: number) => (
-              <TouchableOpacity key={i} style={s.videoLink}>
+              <TouchableOpacity key={i} style={s.videoLink} onPress={() => openVideo(l, diagnosisResult.issue)}>
                 <Play size={16} color={colors.primary} />
                 <Text style={s.videoTxt}>{l.title}</Text>
+                <ExternalLink size={16} color={colors.primary} />
               </TouchableOpacity>
             ))}
 
