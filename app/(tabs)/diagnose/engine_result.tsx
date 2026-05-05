@@ -18,6 +18,7 @@ import {
 import Animated, { FadeIn } from "react-native-reanimated"
 import { useDiagnosticsContext } from "@/context/DiagnosticsContext"
 import React from "react"
+import { getSafeVideoUrl } from "@/utils/diagnosticHistory"
 
 interface VideoLink {
   url: string
@@ -56,8 +57,8 @@ export default function EngineSoundResultScreen() {
     }
   }, [id])
 
-  const handleVideoLink = (url: string): Promise<void> => {
-    return Linking.openURL(url)
+  const handleVideoLink = (video: VideoLink): Promise<void> => {
+    return Linking.openURL(getSafeVideoUrl(video, diagnostic?.result?.issue))
   }
 
   interface SeverityLevel {
@@ -173,7 +174,7 @@ export default function EngineSoundResultScreen() {
               <Pressable
                 key={index}
                 style={[styles.videoLink, { backgroundColor: colors.border }]}
-                onPress={() => handleVideoLink(video.url)}
+                onPress={() => handleVideoLink(video)}
               >
                 <Text style={[styles.videoLinkText, { color: colors.primary }]}>{video.title}</Text>
                 <ExternalLink size={18} color={colors.primary} />
