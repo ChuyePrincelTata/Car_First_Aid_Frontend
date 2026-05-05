@@ -69,6 +69,7 @@ type User = {
   role: "user" | "mechanic"
   is_active: boolean
   created_at: string
+  mechanicInfo?: MechanicInfo
 }
 
 type AuthContextType = {
@@ -81,6 +82,7 @@ type AuthContextType = {
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string, name: string, role: "user" | "mechanic") => Promise<void>
   signOut: () => Promise<void>
+  updateProfile: (profile: Partial<Pick<User, "name" | "email">>) => Promise<void>
   updateMechanicInfo: (info: MechanicInfo) => Promise<void>
   mechanic: {
     uploadCertificate: (certificateUri: string) => Promise<void>
@@ -391,14 +393,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   const updateMechanicInfo = async (info: MechanicInfo) => {
-    if (!user || user.role !== "mechanic" || !token) return
+    if (!user || user.role !== "mechanic") return
 
     try {
+      const updatedUser = { ...user, mechanicInfo: info }
+      setUser(updatedUser)
+      await secureStore.setItemAsync("user", JSON.stringify(updatedUser))
+
+      if (!token) return
+
       // Check network connectivity
       const netInfo = await NetInfo.fetch()
 
       if (!netInfo.isConnected) {
-        throw new Error("Cannot update profile while offline. Please connect to the internet and try again.")
+        console.warn("Mechanic profile saved locally while offline. Remote sync skipped.")
+        return
       }
 
       const response = await fetchWithTimeout(`${apiUrl}/mechanics/me`, {
@@ -411,12 +420,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       })
 
       if (!response.ok) {
-        throw new Error("Failed to update mechanic info")
+        console.warn("Mechanic profile saved locally, but remote sync failed.")
       }
     } catch (error) {
       console.error("Error updating mechanic info", error)
-      throw error
     }
+  }
+
+  const updateProfile = async (profile: Partial<Pick<User, "name" | "email">>) => {
+    if (!user) return
+
+    const updatedUser = {
+      ...user,
+      ...profile,
+      name: profile.name?.trim() || user.name,
+      email: profile.email?.trim() || user.email,
+    }
+
+    setUser(updatedUser)
+    await secureStore.setItemAsync("user", JSON.stringify(updatedUser))
   }
 
   const signOut = async () => {
@@ -480,6 +502,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signIn,
         signUp,
         signOut,
+        updateProfile,
         updateMechanicInfo,
         mechanic: {
           uploadCertificate,

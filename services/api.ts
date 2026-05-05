@@ -1,3 +1,5 @@
+import { getFallbackVideoLinks } from "@/utils/diagnosticHistory"
+
 // Auth API
 export const loginUser = async (email: string, password: string) => {
   // Simulate API call
@@ -76,16 +78,7 @@ export const uploadEngineSoundRecording = async (audioFile: File): Promise<Diagn
         "The audio analysis detected an irregular engine idle pattern which could indicate issues with the fuel injectors or spark plugs.",
       recommendation: "Check and possibly replace spark plugs. Inspect fuel injectors for clogs.",
       severity: "medium",
-      videoLinks: [
-        {
-          title: "How to Fix Engine Idle Problems",
-          url: "https://www.youtube.com/watch?v=example1",
-        },
-        {
-          title: "Diagnosing Irregular Idle Issues",
-          url: "https://www.youtube.com/watch?v=example2",
-        },
-      ],
+      videoLinks: getFallbackVideoLinks("Irregular engine idle"),
     },
   }
 }
@@ -114,16 +107,7 @@ export const uploadDashboardImage = async (imageFile: File): Promise<UploadDashb
       recommendation:
         "Have your ABS system checked by a professional mechanic. Continue to drive with caution, as your normal brakes should still work, but the anti-lock function may be compromised.",
       severity: "medium",
-      videoLinks: [
-        {
-          title: "Understanding ABS Warning Light",
-          url: "https://www.youtube.com/watch?v=example1",
-        },
-        {
-          title: "Common ABS System Problems",
-          url: "https://www.youtube.com/watch?v=example2",
-        },
-      ],
+      videoLinks: getFallbackVideoLinks("ABS Warning Light"),
     },
   }
 }
@@ -148,12 +132,7 @@ export const fetchDiagnosticHistory = async () => {
         recommendation:
           "Have your timing belt and tensioner inspected and replaced if necessary. This is a critical maintenance item.",
         severity: "medium",
-        videoLinks: [
-          {
-            title: "How to Diagnose Timing Belt Noise",
-            url: "https://www.youtube.com/watch?v=example1",
-          },
-        ],
+        videoLinks: getFallbackVideoLinks("Timing Belt Noise"),
       },
     },
     {
@@ -170,12 +149,7 @@ export const fetchDiagnosticHistory = async () => {
         recommendation:
           "Connect an OBD-II scanner to retrieve the specific error code. Common causes include oxygen sensor failure, loose gas cap, or catalytic converter issues.",
         severity: "medium",
-        videoLinks: [
-          {
-            title: "Understanding Check Engine Light",
-            url: "https://www.youtube.com/watch?v=example2",
-          },
-        ],
+        videoLinks: getFallbackVideoLinks("Check Engine Light"),
       },
     },
   ]

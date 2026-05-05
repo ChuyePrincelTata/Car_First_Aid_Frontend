@@ -1,9 +1,9 @@
 import { useState, useRef } from "react"
 import {
   StyleSheet, Text, View, TouchableOpacity, Image,
-  ActivityIndicator, ScrollView, Dimensions,
+  ActivityIndicator, ScrollView, Dimensions, Linking, Alert,
 } from "react-native"
-import { Camera, Upload } from "@/components/SafeLucide"
+import { Camera, Upload, ExternalLink, Youtube } from "@/components/SafeLucide"
 import { useTheme } from "@/context/ThemeContext"
 import ScreenHeader, { SCREEN_HEADER_H } from "@/components/ScreenHeader"
 import * as ImagePicker from "expo-image-picker"
@@ -16,7 +16,7 @@ import AppButton from "@/components/AppButton"
 import { useLocalSearchParams } from "expo-router"
 import React, { useEffect } from "react"
 import { useDiagnosticsContext } from "@/context/DiagnosticsContext"
-import { createDiagnosticHistoryItem } from "@/utils/diagnosticHistory"
+import { createDiagnosticHistoryItem, getFallbackVideoLinks, getSafeVideoUrl } from "@/utils/diagnosticHistory"
 
 const { width } = Dimensions.get("window")
 
@@ -68,6 +68,12 @@ export default function DiagnoseScreen() {
     }
   }
 
+  const openVideo = (link: VideoLink, issue?: string) => {
+    Linking.openURL(getSafeVideoUrl(link, issue)).catch(() => {
+      Alert.alert("Could not open link", "Please check your connection and try again.")
+    })
+  }
+
   const analyzeDashboard = async () => {
     if (!image) return
     setDiagnosing(true)
@@ -83,16 +89,15 @@ export default function DiagnoseScreen() {
       }, 30000)
       if (!response.ok) throw new Error(`Upload failed: ${response.status}`)
       const result = await response.json()
-      setDiagnosisResult(result)
-      addDiagnostic(
-        createDiagnosticHistoryItem({
-          type: "dashboard",
-          title: "Dashboard Light Check",
-          result,
-          sourceUri: image,
-          inputSummary: "Dashboard warning light photo attached",
-        }),
-      )
+      const historyItem = createDiagnosticHistoryItem({
+        type: "dashboard",
+        title: "Dashboard Light Check",
+        result,
+        sourceUri: image,
+        inputSummary: "Dashboard warning light photo attached",
+      })
+      setDiagnosisResult({ ...result, videoLinks: historyItem.result?.videoLinks ?? [] })
+      addDiagnostic(historyItem)
     } catch {
       const fallbackResult = {
         issue: "Check Engine Light",
@@ -104,10 +109,7 @@ export default function DiagnoseScreen() {
           "Use an OBD-II scanner to read specific error codes",
           "Have a professional mechanic inspect the vehicle",
         ],
-        videoLinks: [
-          { title: "How to Diagnose Check Engine Light", url: "https://www.youtube.com/watch?v=example1" },
-          { title: "Common Check Engine Light Causes", url: "https://www.youtube.com/watch?v=example2" },
-        ],
+        videoLinks: getFallbackVideoLinks("Check Engine Light"),
       }
       setDiagnosisResult(fallbackResult)
       addDiagnostic(
@@ -265,6 +267,15 @@ export default function DiagnoseScreen() {
       fontFamily: FontFamily.regular,
       color: colors.text, lineHeight: 22,
     },
+    videoSection: {
+      marginTop: Spacing.sm,
+    },
+    sectionHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginTop: Spacing.sm,
+      marginBottom: Spacing.sm,
+    },
     videoLink: {
       flexDirection: "row", alignItems: "center",
       backgroundColor: isDark ? colors.primary + "12" : colors.primary + "08",
@@ -400,15 +411,22 @@ export default function DiagnoseScreen() {
             ))}
 
             {diagnosisResult.videoLinks?.length > 0 && (
-              <>
-                <Text style={styles.sectionLabel}>Helpful Videos</Text>
+              <View style={styles.videoSection}>
+                <View style={styles.sectionHeader}>
+                  <Youtube size={22} color="#E53935" />
+                  <Text style={[styles.sectionLabel, { marginLeft: Spacing.md }]}>Helpful Videos</Text>
+                </View>
                 {diagnosisResult.videoLinks.map((link: VideoLink, i: number) => (
-                  <TouchableOpacity key={i} style={styles.videoLink}>
-                    <Camera size={18} color={colors.primary} />
-                    <Text style={styles.videoLinkText}>{link.title}</Text>
+                  <TouchableOpacity 
+                    key={i} 
+                    style={[styles.videoLink, { backgroundColor: colors.primary + "08" }]}
+                    onPress={() => openVideo(link, diagnosisResult.issue)}
+                  >
+                    <Text style={[styles.videoLinkText, { color: colors.primary }]}>{link.title}</Text>
+                    <ExternalLink size={18} color={colors.primary} />
                   </TouchableOpacity>
                 ))}
-              </>
+              </View>
             )}
 
             <AppButton

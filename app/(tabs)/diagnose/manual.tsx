@@ -1,17 +1,17 @@
 import { useState } from "react"
 import {
   StyleSheet, Text, View, TextInput,
-  TouchableOpacity, ScrollView, ActivityIndicator,
+  TouchableOpacity, ScrollView, ActivityIndicator, Linking, Alert,
 } from "react-native"
 import { useTheme } from "@/context/ThemeContext"
-import { AlertTriangle, Play, ChevronLeft } from "@/components/SafeLucide"
+import { AlertTriangle, Play, ChevronLeft, Youtube, ExternalLink } from "@/components/SafeLucide"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useRouter } from "expo-router"
 import { FontFamily, FontSize, Spacing, Radius } from "@/constants/Theme"
 import AppButton from "@/components/AppButton"
 import React from "react"
 import { useDiagnosticsContext } from "@/context/DiagnosticsContext"
-import { createDiagnosticHistoryItem } from "@/utils/diagnosticHistory"
+import { createDiagnosticHistoryItem, getFallbackVideoLinks, getSafeVideoUrl } from "@/utils/diagnosticHistory"
 
 type VideoLink = { title: string; url: string }
 
@@ -43,10 +43,7 @@ export default function ManualDiagnosisScreen() {
           "Have a professional perform a transmission diagnostic scan",
           "Consider a transmission fluid flush if not done recently",
         ],
-        videoLinks: [
-          { title: "How to Check Transmission Fluid", url: "https://www.youtube.com/watch?v=example1" },
-          { title: "Common Transmission Problems", url: "https://www.youtube.com/watch?v=example2" },
-        ],
+        videoLinks: getFallbackVideoLinks("Transmission Problem"),
       }
       setDiagnosisResult(result)
       addDiagnostic(
@@ -65,6 +62,12 @@ export default function ManualDiagnosisScreen() {
     setDescription("")
     setSymptoms("")
     setDiagnosisResult(null)
+  }
+
+  const openVideo = (link: VideoLink, issue?: string) => {
+    Linking.openURL(getSafeVideoUrl(link, issue)).catch(() => {
+      Alert.alert("Could not open link", "Please check your connection and try again.")
+    })
   }
 
   const severityColor = (s: string) =>
@@ -146,12 +149,14 @@ export default function ManualDiagnosisScreen() {
       backgroundColor: colors.primary, marginTop: 8, marginRight: Spacing.sm,
     },
     recText: { flex: 1, fontSize: FontSize.sm, fontFamily: FontFamily.regular, color: colors.text, lineHeight: 22 },
+    videoSection: { marginTop: Spacing.lg, marginBottom: Spacing.md },
+    sectionHeader: { flexDirection: "row", alignItems: "center", marginBottom: Spacing.md },
     videoLink: {
-      flexDirection: "row", alignItems: "center",
+      flexDirection: "row", alignItems: "center", justifyContent: "space-between",
       backgroundColor: isDark ? colors.primary + "12" : colors.primary + "08",
-      padding: Spacing.sm, borderRadius: Radius.md, marginBottom: Spacing.sm,
+      padding: Spacing.md, borderRadius: Radius.md, marginBottom: Spacing.sm,
     },
-    videoTxt: { flex: 1, fontSize: FontSize.sm, fontFamily: FontFamily.medium, color: colors.primary, marginLeft: Spacing.sm },
+    videoTxt: { flex: 1, fontSize: FontSize.sm, fontFamily: FontFamily.medium, color: colors.primary },
     resetLink: { alignSelf: "center", marginTop: Spacing.lg },
     resetTxt: { fontSize: FontSize.xs, fontFamily: FontFamily.medium, color: colors.error },
   })
@@ -243,13 +248,22 @@ export default function ManualDiagnosisScreen() {
               </View>
             ))}
 
-            <Text style={styles.sectionLabel}>Helpful Videos</Text>
-            {diagnosisResult.videoLinks.map((l: VideoLink, i: number) => (
-              <TouchableOpacity key={i} style={styles.videoLink}>
-                <Play size={16} color={colors.primary} />
-                <Text style={styles.videoTxt}>{l.title}</Text>
-              </TouchableOpacity>
-            ))}
+            <View style={styles.videoSection}>
+              <View style={styles.sectionHeader}>
+                <Youtube size={22} color="#E53935" />
+                <Text style={[styles.sectionLabel, { marginLeft: Spacing.md }]}>Helpful Videos</Text>
+              </View>
+              {diagnosisResult.videoLinks.map((l: VideoLink, i: number) => (
+                <TouchableOpacity 
+                  key={i} 
+                  style={[styles.videoLink, { backgroundColor: colors.primary + "08" }]}
+                  onPress={() => openVideo(l, diagnosisResult.issue)}
+                >
+                  <Text style={[styles.videoTxt, { color: colors.primary }]}>{l.title}</Text>
+                  <ExternalLink size={18} color={colors.primary} />
+                </TouchableOpacity>
+              ))}
+            </View>
 
             <TouchableOpacity style={styles.resetLink} onPress={resetDiagnosis}>
               <Text style={styles.resetTxt}>Start a New Diagnosis</Text>

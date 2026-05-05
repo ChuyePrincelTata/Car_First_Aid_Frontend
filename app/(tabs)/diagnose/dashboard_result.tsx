@@ -19,6 +19,7 @@ import { useDiagnosticsContext } from "@/context/DiagnosticsContext"
 import type Colors from "@/constants/Colors"
 import { useTheme } from "@/context/ThemeContext"
 import React from "react"
+import { getSafeVideoUrl } from "@/utils/diagnosticHistory"
 
 interface VideoLink {
   url: string
@@ -57,12 +58,8 @@ export default function DashboardLightResultScreen() {
     }
   }, [id])
 
-  interface VideoLinkHandler {
-    url: string
-  }
-
-  const handleVideoLink = (url: VideoLinkHandler["url"]): Promise<void> => {
-    return Linking.openURL(url)
+  const handleVideoLink = (video: VideoLink): Promise<void> => {
+    return Linking.openURL(getSafeVideoUrl(video, diagnostic?.result?.issue))
   }
 
   interface SeverityLevel {
@@ -167,7 +164,7 @@ export default function DashboardLightResultScreen() {
             <Text style={styles(colors).sectionTitle}>Helpful Videos</Text>
             <View style={styles(colors).videoLinks}>
               {diagnostic.result.videoLinks?.map((videoLink: VideoLink, index: number) => (
-                <Pressable key={index} style={styles(colors).videoLink} onPress={() => handleVideoLink(videoLink.url)}>
+                <Pressable key={index} style={styles(colors).videoLink} onPress={() => handleVideoLink(videoLink)}>
                   <Text style={styles(colors).videoLinkText}>{videoLink.title}</Text>
                   <ExternalLink size={20} color={colors.primary} />
                 </Pressable>

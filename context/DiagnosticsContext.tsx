@@ -2,9 +2,10 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import { Platform } from "react-native"
-import * as SQLite from "expo-sqlite"
+import * as FileSystem from "expo-file-system/legacy"
 import * as SecureStore from "expo-secure-store"
 import React from "react"
+import { getFallbackVideoLinks } from "@/utils/diagnosticHistory"
 
 // Types for your existing diagnostic system
 export type VideoLink = {
@@ -88,52 +89,51 @@ export type DiagnosticsContextType = {
 // Create context
 const DiagnosticsContext = createContext<DiagnosticsContextType | undefined>(undefined)
 const HISTORY_STORAGE_KEY = "diagnostic_history"
-
-let storageDb: SQLite.SQLiteDatabase | null = null
-
-const getStorageDb = async () => {
-  if (!storageDb) {
-    storageDb = await SQLite.openDatabaseAsync("carfirstaid.db")
-    await storageDb.execAsync(`
-      CREATE TABLE IF NOT EXISTS app_storage (
-        key TEXT PRIMARY KEY NOT NULL,
-        value TEXT NOT NULL
-      );
-    `)
-  }
-
-  return storageDb
-}
+const HISTORY_FILE_URI = `${FileSystem.documentDirectory ?? ""}diagnostic-history.json`
 
 const historyStorage = {
   getItemAsync: async (key: string) => {
     if (Platform.OS === "web") return localStorage.getItem(key)
+    if (key !== HISTORY_STORAGE_KEY || !FileSystem.documentDirectory) return null
 
-    const db = await getStorageDb()
-    const row = await db.getFirstAsync<{ value: string }>("SELECT value FROM app_storage WHERE key = ?", key)
-    return row?.value ?? null
+    try {
+      const fileInfo = await FileSystem.getInfoAsync(HISTORY_FILE_URI)
+      if (!fileInfo.exists) return null
+
+      return FileSystem.readAsStringAsync(HISTORY_FILE_URI)
+    } catch (error) {
+      console.error("Error retrieving from storage:", error)
+      return null
+    }
   },
   setItemAsync: async (key: string, value: string) => {
     if (Platform.OS === "web") {
       localStorage.setItem(key, value)
       return
     }
+    if (key !== HISTORY_STORAGE_KEY || !FileSystem.documentDirectory) return
 
-    const db = await getStorageDb()
-    await db.runAsync(
-      "INSERT OR REPLACE INTO app_storage (key, value) VALUES (?, ?)",
-      key,
-      value,
-    )
+    try {
+      await FileSystem.writeAsStringAsync(HISTORY_FILE_URI, value)
+    } catch (error) {
+      console.error("Error saving to storage:", error)
+      throw error
+    }
   },
   deleteItemAsync: async (key: string) => {
     if (Platform.OS === "web") {
       localStorage.removeItem(key)
       return
     }
+    if (key !== HISTORY_STORAGE_KEY || !FileSystem.documentDirectory) return
 
-    const db = await getStorageDb()
-    await db.runAsync("DELETE FROM app_storage WHERE key = ?", key)
+    try {
+      const fileInfo = await FileSystem.getInfoAsync(HISTORY_FILE_URI)
+      if (fileInfo.exists) await FileSystem.deleteAsync(HISTORY_FILE_URI)
+    } catch (error) {
+      console.error("Error deleting from storage:", error)
+      throw error
+    }
   },
 }
 
@@ -159,93 +159,105 @@ export function DiagnosticsProvider({ children }: { children: ReactNode }) {
   // Initialize history from storage, falling back to sample data for a fresh install.
   useEffect(() => {
     const loadHistory = async () => {
-      let storedHistory = await historyStorage.getItemAsync(HISTORY_STORAGE_KEY)
+      try {
+        let storedHistory = await historyStorage.getItemAsync(HISTORY_STORAGE_KEY)
 
-      if (!storedHistory && Platform.OS !== "web") {
-        storedHistory = await SecureStore.getItemAsync(HISTORY_STORAGE_KEY)
-        if (storedHistory) {
-          await historyStorage.setItemAsync(HISTORY_STORAGE_KEY, storedHistory)
-          await SecureStore.deleteItemAsync(HISTORY_STORAGE_KEY)
+        if (!storedHistory && Platform.OS !== "web") {
+          try {
+            storedHistory = await SecureStore.getItemAsync(HISTORY_STORAGE_KEY)
+            if (storedHistory) {
+              await historyStorage.setItemAsync(HISTORY_STORAGE_KEY, storedHistory)
+              await SecureStore.deleteItemAsync(HISTORY_STORAGE_KEY)
+            }
+          } catch (secureStoreError) {
+            console.warn("SecureStore access failed:", secureStoreError)
+          }
         }
-      }
 
-      if (storedHistory) {
-        setHistory(JSON.parse(storedHistory))
+        if (storedHistory) {
+          try {
+            setHistory(JSON.parse(storedHistory))
+            setHistoryLoaded(true)
+            return
+          } catch (parseError) {
+            console.error("Failed to parse stored history:", parseError)
+          }
+        }
+
+        setHistory([
+          {
+            id: "1",
+            type: "engine",
+            title: "Engine Sound Analysis",
+            date: "2023-09-15T14:48:00.000Z",
+            status: "completed",
+            resolved: false,
+            result: {
+              issue: "Timing Belt Noise",
+              confidence: 92,
+              description:
+                "The audio analysis detected sounds consistent with a worn timing belt or tensioner. This can lead to engine performance issues if not addressed.",
+              recommendation:
+                "Have your timing belt and tensioner inspected and replaced if necessary. This is a critical maintenance item.",
+              recommendations: [
+                "Inspect the timing belt and tensioner.",
+                "Avoid long trips until a mechanic confirms the condition.",
+              ],
+              severity: "medium",
+              videoLinks: getFallbackVideoLinks("Timing Belt Noise"),
+            },
+          },
+          {
+            id: "2",
+            type: "dashboard",
+            title: "Dashboard Light Check",
+            date: "2023-09-10T10:30:00.000Z",
+            status: "completed",
+            resolved: false,
+            result: {
+              issue: "Check Engine Light",
+              confidence: 98,
+              description:
+                "The check engine light indicates an issue with your engine or emissions system that needs attention.",
+              recommendation:
+                "Connect an OBD-II scanner to retrieve the specific error code. Common causes include oxygen sensor failure, loose gas cap, or catalytic converter issues.",
+              recommendations: [
+                "Confirm the gas cap is tight.",
+                "Use an OBD-II scanner to read the exact code.",
+              ],
+              severity: "medium",
+              videoLinks: getFallbackVideoLinks("Check Engine Light"),
+            },
+          },
+        ])
         setHistoryLoaded(true)
-        return
+      } catch (err) {
+        console.error("Failed to load diagnostic history:", err)
+        setHistoryLoaded(true)
       }
-
-      setHistory([
-        {
-          id: "1",
-          type: "engine",
-          title: "Engine Sound Analysis",
-          date: "2023-09-15T14:48:00.000Z",
-          status: "completed",
-          resolved: false,
-          result: {
-            issue: "Timing Belt Noise",
-            confidence: 92,
-            description:
-              "The audio analysis detected sounds consistent with a worn timing belt or tensioner. This can lead to engine performance issues if not addressed.",
-            recommendation:
-              "Have your timing belt and tensioner inspected and replaced if necessary. This is a critical maintenance item.",
-            recommendations: [
-              "Inspect the timing belt and tensioner.",
-              "Avoid long trips until a mechanic confirms the condition.",
-            ],
-            severity: "medium",
-            videoLinks: [
-              {
-                title: "How to Diagnose Timing Belt Noise",
-                url: "https://www.youtube.com/watch?v=example1",
-              },
-            ],
-          },
-        },
-        {
-          id: "2",
-          type: "dashboard",
-          title: "Dashboard Light Check",
-          date: "2023-09-10T10:30:00.000Z",
-          status: "completed",
-          resolved: false,
-          result: {
-            issue: "Check Engine Light",
-            confidence: 98,
-            description:
-              "The check engine light indicates an issue with your engine or emissions system that needs attention.",
-            recommendation:
-              "Connect an OBD-II scanner to retrieve the specific error code. Common causes include oxygen sensor failure, loose gas cap, or catalytic converter issues.",
-            recommendations: [
-              "Confirm the gas cap is tight.",
-              "Use an OBD-II scanner to read the exact code.",
-            ],
-            severity: "medium",
-            videoLinks: [
-              {
-                title: "Understanding Check Engine Light",
-                url: "https://www.youtube.com/watch?v=example2",
-              },
-            ],
-          },
-        },
-      ])
-      setHistoryLoaded(true)
     }
 
-    loadHistory().catch((err) => {
-      console.error("Failed to load diagnostic history:", err)
-      setHistoryLoaded(true)
-    })
+    loadHistory()
   }, [])
 
   useEffect(() => {
     if (!historyLoaded) return
 
-    historyStorage
-      .setItemAsync(HISTORY_STORAGE_KEY, JSON.stringify(history))
-      .catch((err) => console.error("Failed to save diagnostic history:", err))
+    const saveHistory = async () => {
+      try {
+        await historyStorage.setItemAsync(HISTORY_STORAGE_KEY, JSON.stringify(history))
+      } catch (err) {
+        console.error("Failed to save diagnostic history:", err)
+        // History will still work in-memory, just warn the user
+      }
+    }
+
+    // Debounce saves to avoid excessive database writes
+    const timer = setTimeout(() => {
+      saveHistory()
+    }, 1000)
+
+    return () => clearTimeout(timer)
   }, [history, historyLoaded])
 
   // Original functions
