@@ -116,7 +116,7 @@ const STATIC_CORPUS: SearchItem[] = [
     subtitle: "Scan a warning light on your dash",
     category: "Diagnose",
     icon: null,
-    route: "/(tabs)/diagnose/dashboard_result",
+    route: "/(tabs)/diagnose",
     tags: ["dashboard", "light", "scan", "warning", "icon", "symbol", "photo"],
   },
   {
@@ -125,7 +125,7 @@ const STATIC_CORPUS: SearchItem[] = [
     subtitle: "Scan an engine component",
     category: "Diagnose",
     icon: null,
-    route: "/(tabs)/diagnose/engine_result",
+    route: "/(tabs)/diagnose",
     tags: ["engine", "part", "component", "under hood", "scan", "photo"],
   },
   {
