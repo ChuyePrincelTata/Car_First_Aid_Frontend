@@ -4,13 +4,13 @@ import { useLocalSearchParams, useRouter } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import AppButton from "@/components/AppButton"
 import ConfirmActionModal from "@/components/ConfirmActionModal"
+import ScreenHeader, { SCREEN_HEADER_H } from "@/components/ScreenHeader"
 import {
   Activity,
   AlertCircle,
   Calendar,
   Camera,
   CheckCircle,
-  ChevronLeft,
   Clock,
   ExternalLink,
   FileText,
@@ -48,16 +48,22 @@ export default function DiagnosisDetailScreen() {
 
   if (!diagnosis) {
     return (
-      <View style={[styles.notFound, { backgroundColor: colors.background }]}>
-        <AlertCircle size={44} color={colors.error} />
-        <Text style={[styles.notFoundText, { color: colors.text }]}>Diagnosis not found.</Text>
-        <AppButton
-          label="Go Back"
-          variant="outline"
-          onPress={() => router.back()}
-          fullWidth={false}
-          style={{ marginTop: 16 }}
+      <View style={[styles.screen, { backgroundColor: colors.background }]}>
+        <ScreenHeader
+          title="Diagnosis Details"
+          onBack={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)/history"))}
         />
+        <View style={styles.notFound}>
+          <AlertCircle size={44} color={colors.error} />
+          <Text style={[styles.notFoundText, { color: colors.text }]}>Diagnosis not found.</Text>
+          <AppButton
+            label="Go Back"
+            variant="outline"
+            onPress={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)/history"))}
+            fullWidth={false}
+            style={{ marginTop: 16 }}
+          />
+        </View>
       </View>
     )
   }
@@ -90,28 +96,20 @@ export default function DiagnosisDetailScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
-      <View
-        style={[
-          styles.topBar,
-          {
-            paddingTop: insets.top + 8,
-            backgroundColor: isDark ? colors.card : "#fff",
-            borderBottomColor: colors.border,
-          },
-        ]}
-      >
-        <TouchableOpacity onPress={() => router.back()} style={styles.topButton}>
-          <ChevronLeft size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.topBarTitle, { color: colors.text }]} numberOfLines={1}>
-          Diagnosis Details
-        </Text>
-        <TouchableOpacity onPress={() => setConfirmDeleteVisible(true)} style={styles.topButton}>
-          <Trash2 size={20} color={colors.error} />
-        </TouchableOpacity>
-      </View>
+      <ScreenHeader
+        title="Diagnosis Details"
+        onBack={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)/history"))}
+        right={
+          <TouchableOpacity onPress={() => setConfirmDeleteVisible(true)} style={styles.headerAction}>
+            <Trash2 size={20} color={colors.error} />
+          </TouchableOpacity>
+        }
+      />
 
-      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 40 }} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={{ paddingTop: insets.top + SCREEN_HEADER_H, paddingBottom: insets.bottom + 40 }}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={[styles.hero, { backgroundColor: isDark ? colors.card : "#fff", borderBottomColor: colors.border }]}>
           <View style={[styles.iconWrap, { backgroundColor: colors.primary + "1A" }]}>{renderIcon()}</View>
           <View style={styles.heroInfo}>
@@ -285,21 +283,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   notFound: { flex: 1, justifyContent: "center", alignItems: "center", padding: 24 },
   notFoundText: { marginTop: 12, fontFamily: FontFamily.medium },
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-  },
-  topButton: { width: 40, height: 40, justifyContent: "center", alignItems: "center" },
-  topBarTitle: { fontSize: FontSize.md, fontFamily: FontFamily.bold, flex: 1, textAlign: "center" },
+  headerAction: { width: 44, height: 36, alignItems: "center", justifyContent: "center" },
   hero: {
     flexDirection: "row",
     alignItems: "flex-start",

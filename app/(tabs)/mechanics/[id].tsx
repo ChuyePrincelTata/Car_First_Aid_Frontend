@@ -7,13 +7,14 @@ import { useLocalSearchParams, useRouter } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import MapView, { Marker } from "react-native-maps"
 import {
-  ChevronLeft, CheckCircle, Star, Phone, MessageSquare,
+  CheckCircle, Star, Phone, MessageSquare,
   MapPin, Briefcase, FileText, Clock,
 } from "@/components/SafeLucide"
 import { useTheme } from "@/context/ThemeContext"
 import { FontFamily, FontSize, Spacing, Radius } from "@/constants/Theme"
 import { mockMechanics } from "@/data/mockData"
 import AppButton from "@/components/AppButton"
+import ScreenHeader, { SCREEN_HEADER_H } from "@/components/ScreenHeader"
 
 const GOLD = "#F59E0B"
 
@@ -29,7 +30,7 @@ export default function MechanicProfileScreen() {
     return (
       <View style={[styles.notFound, { backgroundColor: colors.background }]}>
         <Text style={{ color: colors.text, fontFamily: FontFamily.medium }}>Mechanic not found.</Text>
-        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 12 }}>
+        <TouchableOpacity onPress={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)/mechanics"))} style={{ marginTop: 12 }}>
           <Text style={{ color: colors.primary, fontFamily: FontFamily.medium }}>Go Back</Text>
         </TouchableOpacity>
       </View>
@@ -58,16 +59,15 @@ export default function MechanicProfileScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
-      {/* Fixed Top Bar */}
-      <View style={[styles.topBar, { paddingTop: insets.top + 4, backgroundColor: isDark ? colors.card : "#fff", borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <ChevronLeft size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.topBarTitle, { color: colors.text }]} numberOfLines={1}>Mechanic Profile</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <ScreenHeader
+        title="Mechanic Profile"
+        onBack={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)/mechanics"))}
+      />
 
-      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 30 }} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={{ paddingTop: insets.top + SCREEN_HEADER_H, paddingBottom: insets.bottom + 30 }}
+        showsVerticalScrollIndicator={false}
+      >
 
         {/* Hero section */}
         <View style={[styles.hero, { backgroundColor: isDark ? colors.card : "#fff" }]}>
@@ -191,22 +191,6 @@ export default function MechanicProfileScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   notFound: { flex: 1, justifyContent: "center", alignItems: "center" },
-
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-  },
-  backBtn: { width: 40, height: 40, justifyContent: "center" },
-  topBarTitle: { fontSize: FontSize.md, fontFamily: FontFamily.bold, flex: 1, textAlign: "center" },
 
   hero: {
     flexDirection: "row",

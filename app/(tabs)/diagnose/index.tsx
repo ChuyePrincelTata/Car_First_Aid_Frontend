@@ -141,25 +141,6 @@ export default function DiagnoseScreen() {
   const styles = StyleSheet.create({
     container:      { flex: 1, backgroundColor: colors.background },
     // ─── Header ─────────────────────────────────────────────────────────────
-    header: {
-      paddingTop: insets.top + 16,
-      paddingHorizontal: Spacing.xl,
-      paddingBottom: Spacing.sm,
-    },
-    headerTop: { flexDirection: "row", alignItems: "center", marginBottom: 4 },
-    backBtn: {
-      width: 40, height: 40,
-      borderRadius: 20,
-      backgroundColor: isDark ? colors.card : "#f1f5f9",
-      alignItems: "center", justifyContent: "center",
-      marginRight: 12,
-    },
-    title: {
-      fontSize: FontSize.xl,
-      fontFamily: FontFamily.bold,
-      color: colors.text,
-      letterSpacing: -0.5,
-    },
     subtitle: {
       fontSize: FontSize.sm,
       fontFamily: FontFamily.regular,

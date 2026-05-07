@@ -8,6 +8,7 @@
  */
 import React from "react"
 import { View, Text, Pressable, StyleSheet, useWindowDimensions } from "react-native"
+import { useRouter } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useTheme } from "@/context/ThemeContext"
 import { FontFamily } from "@/constants/Theme"
@@ -31,10 +32,17 @@ function rootSegment(routeName: string) {
   return routeName.replace("/index", "").split("/")[0]
 }
 
+function rootHref(tabName: string) {
+  if (tabName === "index") return "/(tabs)"
+  if (tabName === "profile") return "/(tabs)/profile"
+  return `/(tabs)/${tabName}`
+}
+
 type Props = { state: any; descriptors: any; navigation: any }
 
 export default function CustomTabBar({ state, descriptors, navigation }: Props) {
   const { colors, isDark } = useTheme()
+  const router = useRouter()
   const insets   = useSafeAreaInsets()
   const { width } = useWindowDimensions()
 
@@ -91,7 +99,7 @@ export default function CustomTabBar({ state, descriptors, navigation }: Props) 
             accessibilityState={isFocused ? { selected: true } : {}}
             onPress={() => {
               const event = navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true })
-              if (!isFocused && !event.defaultPrevented) navigation.navigate(route.name)
+              if (!event.defaultPrevented) router.replace(rootHref(rootSegment(route.name)) as any)
             }}
             style={styles.btn}
           >
