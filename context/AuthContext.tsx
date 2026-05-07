@@ -69,6 +69,11 @@ type User = {
   role: "user" | "mechanic"
   is_active: boolean
   created_at: string
+  phone?: string
+  location?: string
+  vehicle?: string
+  emergencyContact?: string
+  preferredLanguage?: string
   mechanicInfo?: MechanicInfo
 }
 
@@ -82,7 +87,7 @@ type AuthContextType = {
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string, name: string, role: "user" | "mechanic") => Promise<void>
   signOut: () => Promise<void>
-  updateProfile: (profile: Partial<Pick<User, "name" | "email">>) => Promise<void>
+  updateProfile: (profile: Partial<User>) => Promise<void>
   updateMechanicInfo: (info: MechanicInfo) => Promise<void>
   mechanic: {
     uploadCertificate: (certificateUri: string) => Promise<void>
@@ -427,7 +432,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }
 
-  const updateProfile = async (profile: Partial<Pick<User, "name" | "email">>) => {
+  const updateProfile = async (profile: Partial<User>) => {
     if (!user) return
 
     const updatedUser = {
@@ -435,6 +440,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       ...profile,
       name: profile.name?.trim() || user.name,
       email: profile.email?.trim() || user.email,
+      phone: profile.phone?.trim(),
+      location: profile.location?.trim(),
+      vehicle: profile.vehicle?.trim(),
+      emergencyContact: profile.emergencyContact?.trim(),
+      preferredLanguage: profile.preferredLanguage?.trim() || user.preferredLanguage,
     }
 
     setUser(updatedUser)
