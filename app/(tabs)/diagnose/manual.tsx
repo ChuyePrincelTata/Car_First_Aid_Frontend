@@ -4,11 +4,12 @@ import {
   TouchableOpacity, ScrollView, ActivityIndicator, Linking, Alert,
 } from "react-native"
 import { useTheme } from "@/context/ThemeContext"
-import { AlertTriangle, Play, ChevronLeft, Youtube, ExternalLink } from "@/components/SafeLucide"
+import { AlertTriangle, Play, Youtube, ExternalLink } from "@/components/SafeLucide"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useRouter } from "expo-router"
 import { FontFamily, FontSize, Spacing, Radius } from "@/constants/Theme"
 import AppButton from "@/components/AppButton"
+import ScreenHeader, { SCREEN_HEADER_H } from "@/components/ScreenHeader"
 import React from "react"
 import { useDiagnosticsContext } from "@/context/DiagnosticsContext"
 import { createDiagnosticHistoryItem, getFallbackVideoLinks, getSafeVideoUrl } from "@/utils/diagnosticHistory"
@@ -78,16 +79,6 @@ export default function ManualDiagnosisScreen() {
     center: { flex: 1, justifyContent: "center", alignItems: "center" },
     loadingText: { marginTop: Spacing.md, fontSize: FontSize.md, fontFamily: FontFamily.medium, color: colors.text },
 
-    // Header
-    header: { paddingTop: insets.top + 16, paddingHorizontal: Spacing.xl, paddingBottom: Spacing.sm },
-    headerTop: { flexDirection: "row", alignItems: "center", marginBottom: 4 },
-    backBtn: {
-      width: 40, height: 40, borderRadius: 20,
-      backgroundColor: isDark ? colors.card : "#f1f5f9",
-      alignItems: "center", justifyContent: "center",
-      marginRight: 12,
-    },
-    title: { fontSize: FontSize.xl, fontFamily: FontFamily.bold, color: colors.text, letterSpacing: -0.5 },
     subtitle: { fontSize: FontSize.sm, fontFamily: FontFamily.regular, color: colors.tabIconDefault },
 
     // Form
@@ -172,27 +163,23 @@ export default function ManualDiagnosisScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <TouchableOpacity 
-            style={styles.backBtn} 
-            onPress={() => router.navigate("/(tabs)/diagnose")}
-          >
-            <ChevronLeft size={24} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={styles.title}>Manual Diagnosis</Text>
-        </View>
-        <Text style={styles.subtitle}>Describe your car problems in detail</Text>
-      </View>
+      <ScreenHeader
+        title="Manual Diagnosis"
+        onBack={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)/diagnose"))}
+      />
 
       <ScrollView 
         showsVerticalScrollIndicator={false} 
         contentContainerStyle={{ 
           flexGrow: 1, 
+          paddingTop: insets.top + SCREEN_HEADER_H + Spacing.md,
           paddingBottom: 48,
           justifyContent: diagnosisResult ? "flex-start" : "center" 
         }}
       >
+        <Text style={[styles.subtitle, { textAlign: "center", marginHorizontal: Spacing.xl, marginBottom: Spacing.md }]}>
+          Describe your car problems in detail
+        </Text>
 
         {/* Input form */}
         {!diagnosisResult && (

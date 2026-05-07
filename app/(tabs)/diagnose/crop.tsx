@@ -192,7 +192,7 @@ export default function CropScreen() {
     return (
       <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
         <Text style={{ color: "white" }}>No image provided</Text>
-        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 20 }}>
+        <TouchableOpacity onPress={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)/diagnose"))} style={{ marginTop: 20 }}>
           <Text style={{ color: colors.primary }}>Go Back</Text>
         </TouchableOpacity>
       </View>
@@ -205,7 +205,7 @@ export default function CropScreen() {
         
         {/* Top Header */}
         <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.iconBtn}>
+          <TouchableOpacity onPress={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)/diagnose"))} style={styles.iconBtn}>
             <X size={28} color="#ffffff" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Crop Photo</Text>
@@ -247,7 +247,7 @@ export default function CropScreen() {
 
         {/* Bottom Toolbar */}
         <View style={[styles.toolbar, { paddingBottom: insets.bottom + 16 }]}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.toolbarBtn}>
+          <TouchableOpacity onPress={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)/diagnose"))} style={styles.toolbarBtn}>
             <Text style={styles.toolbarText}>Cancel</Text>
           </TouchableOpacity>
 

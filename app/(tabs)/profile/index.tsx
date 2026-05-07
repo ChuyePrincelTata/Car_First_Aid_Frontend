@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react"
+import React, { useEffect, useMemo, useState } from "react"
 import {
   Alert,
   Linking,
@@ -37,10 +37,11 @@ import {
 } from "@/components/SafeLucide"
 import { FontFamily, FontSize, Radius, Spacing } from "@/constants/Theme"
 import { useAuth } from "@/context/AuthContext"
+import { useAnalytics } from "@/context/AnalyticsContext"
 import { useNotificationsContext } from "@/context/NotificationsContext"
 import { useTheme } from "@/context/ThemeContext"
 
-type Panel = "edit" | "notifications" | "privacy" | "settings" | "help" | null
+type Panel = "edit" | "privacy" | "settings" | "help" | null
 
 const initialsFor = (name?: string, email?: string) => {
   const source = name?.trim() || email?.trim() || "Guest User"
@@ -57,27 +58,32 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets()
   const { colors, theme, isDark, toggleTheme } = useTheme()
   const { user, signOut, updateProfile, updateMechanicInfo, isOffline, mechanic } = useAuth()
+  const analytics = useAnalytics()
   const {
     unreadCount,
     notificationsEnabled,
-    setNotificationsEnabled,
-    pushNotificationsEnabled,
-    setPushNotificationsEnabled,
-    markAllAsRead,
-    clearAll,
   } = useNotificationsContext()
 
   const [activePanel, setActivePanel] = useState<Panel>(null)
   const [confirmSignOutVisible, setConfirmSignOutVisible] = useState(false)
   const [savingProfile, setSavingProfile] = useState(false)
   const [dataSaver, setDataSaver] = useState(false)
-  const [analyticsEnabled, setAnalyticsEnabled] = useState(true)
+  const [highQualityMedia, setHighQualityMedia] = useState(true)
+  const [autoSaveHistory, setAutoSaveHistory] = useState(true)
+  const [offlineMode, setOfflineMode] = useState(true)
   const [biometricLock, setBiometricLock] = useState(false)
   const [diagnosticSharing, setDiagnosticSharing] = useState(false)
+  const [hideSensitiveResults, setHideSensitiveResults] = useState(true)
+  const [requireSignInForHistory, setRequireSignInForHistory] = useState(true)
 
   const [profileForm, setProfileForm] = useState({
     name: user?.name ?? "",
     email: user?.email ?? "",
+    phone: user?.phone ?? "",
+    location: user?.location ?? "",
+    vehicle: user?.vehicle ?? "",
+    emergencyContact: user?.emergencyContact ?? "",
+    preferredLanguage: user?.preferredLanguage ?? "English",
   })
   const [mechanicForm, setMechanicForm] = useState({
     address: user?.mechanicInfo?.address ?? "",
@@ -89,8 +95,21 @@ export default function ProfileScreen() {
   const roleLabel = user?.role === "mechanic" ? "Mechanic" : "Car Owner"
   const initials = useMemo(() => initialsFor(user?.name, user?.email), [user?.name, user?.email])
 
+  useEffect(() => {
+    analytics.track("profile_screen_viewed", { role: user?.role ?? "guest" })
+  }, [])
+
   const handleOpenPanel = (panel: Exclude<Panel, null>) => {
-    setProfileForm({ name: user?.name ?? "", email: user?.email ?? "" })
+    analytics.track("profile_panel_opened", { panel })
+    setProfileForm({
+      name: user?.name ?? "",
+      email: user?.email ?? "",
+      phone: user?.phone ?? "",
+      location: user?.location ?? "",
+      vehicle: user?.vehicle ?? "",
+      emergencyContact: user?.emergencyContact ?? "",
+      preferredLanguage: user?.preferredLanguage ?? "English",
+    })
     setMechanicForm({
       address: user?.mechanicInfo?.address ?? "",
       phone: user?.mechanicInfo?.phone ?? "",
@@ -111,6 +130,11 @@ export default function ProfileScreen() {
       await updateProfile({
         name: profileForm.name,
         email: profileForm.email,
+        phone: profileForm.phone,
+        location: profileForm.location,
+        vehicle: profileForm.vehicle,
+        emergencyContact: profileForm.emergencyContact,
+        preferredLanguage: profileForm.preferredLanguage,
       })
 
       if (user?.role === "mechanic") {
@@ -123,6 +147,11 @@ export default function ProfileScreen() {
       }
 
       setActivePanel(null)
+      analytics.track("profile_updated", {
+        hasPhone: Boolean(profileForm.phone),
+        hasVehicle: Boolean(profileForm.vehicle),
+        role: user?.role ?? "guest",
+      })
     } catch (error) {
       Alert.alert("Could not save profile", error instanceof Error ? error.message : "Please try again.")
     } finally {
@@ -131,15 +160,27 @@ export default function ProfileScreen() {
   }
 
   const handleSignOut = async () => {
+    analytics.track("sign_out_confirmed")
     setConfirmSignOutVisible(false)
     await signOut()
     router.replace("/(auth)/Login")
   }
 
   const contactSupport = () => {
+    analytics.track("support_contact_opened")
     Linking.openURL("mailto:support@carfirstaid.app?subject=Car%20First%20Aid%20Support").catch(() => {
       Alert.alert("Could not open email", "Please email support@carfirstaid.app directly.")
     })
+  }
+
+  const goToNotifications = () => {
+    analytics.track("notifications_page_opened_from_profile")
+    router.push("/notifications")
+  }
+
+  const updateSetting = (name: string, value: boolean, setter: (value: boolean) => void) => {
+    setter(value)
+    analytics.track("setting_changed", { name, value })
   }
 
   const styles = StyleSheet.create({
@@ -404,7 +445,6 @@ export default function ProfileScreen() {
 
     const titles: Record<Exclude<Panel, null>, string> = {
       edit: "Edit Profile",
-      notifications: "Notifications",
       privacy: "Privacy & Security",
       settings: "App Settings",
       help: "Help & Support",
@@ -441,6 +481,47 @@ export default function ProfileScreen() {
                     placeholderTextColor={colors.tabIconDefault}
                     keyboardType="email-address"
                     autoCapitalize="none"
+                  />
+                  <Text style={styles.inputLabel}>Phone number</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={profileForm.phone}
+                    onChangeText={(phone) => setProfileForm((prev) => ({ ...prev, phone }))}
+                    placeholder="+237..."
+                    placeholderTextColor={colors.tabIconDefault}
+                    keyboardType="phone-pad"
+                  />
+                  <Text style={styles.inputLabel}>Location</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={profileForm.location}
+                    onChangeText={(location) => setProfileForm((prev) => ({ ...prev, location }))}
+                    placeholder="City or neighborhood"
+                    placeholderTextColor={colors.tabIconDefault}
+                  />
+                  <Text style={styles.inputLabel}>Primary vehicle</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={profileForm.vehicle}
+                    onChangeText={(vehicle) => setProfileForm((prev) => ({ ...prev, vehicle }))}
+                    placeholder="Toyota Corolla 2014"
+                    placeholderTextColor={colors.tabIconDefault}
+                  />
+                  <Text style={styles.inputLabel}>Emergency contact</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={profileForm.emergencyContact}
+                    onChangeText={(emergencyContact) => setProfileForm((prev) => ({ ...prev, emergencyContact }))}
+                    placeholder="Name or phone number"
+                    placeholderTextColor={colors.tabIconDefault}
+                  />
+                  <Text style={styles.inputLabel}>Preferred language</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={profileForm.preferredLanguage}
+                    onChangeText={(preferredLanguage) => setProfileForm((prev) => ({ ...prev, preferredLanguage }))}
+                    placeholder="English"
+                    placeholderTextColor={colors.tabIconDefault}
                   />
 
                   {user?.role === "mechanic" && (
@@ -486,49 +567,45 @@ export default function ProfileScreen() {
                 </>
               )}
 
-              {activePanel === "notifications" && (
-                <>
-                  <Text style={styles.panelText}>
-                    Control diagnostic alerts, mechanic responses, and status reminders.
-                  </Text>
-                  <SettingToggle
-                    title="In-app notifications"
-                    subtitle={`${unreadCount} unread notification${unreadCount === 1 ? "" : "s"}`}
-                    value={notificationsEnabled}
-                    onValueChange={setNotificationsEnabled}
-                  />
-                  <SettingToggle
-                    title="Push notifications"
-                    subtitle="Allow phone-level alerts when supported"
-                    value={pushNotificationsEnabled}
-                    onValueChange={setPushNotificationsEnabled}
-                  />
-                  <AppButton label="Mark All as Read" variant="outline" onPress={markAllAsRead} style={{ marginTop: Spacing.lg }} />
-                  <AppButton label="Clear Notifications" variant="danger" onPress={clearAll} style={{ marginTop: Spacing.sm }} />
-                </>
-              )}
-
               {activePanel === "privacy" && (
                 <>
                   <Text style={styles.panelText}>
-                    These controls manage local app behavior. Server-side privacy policies can be connected when backend endpoints are ready.
+                    Control how sensitive diagnostic information is protected on this device and what can be shared when you contact a mechanic.
                   </Text>
                   <SettingToggle
                     title="App lock"
                     subtitle="Require device-level confirmation before opening private sections"
                     value={biometricLock}
-                    onValueChange={setBiometricLock}
+                    onValueChange={(value) => updateSetting("biometric_lock", value, setBiometricLock)}
+                  />
+                  <SettingToggle
+                    title="Hide sensitive result previews"
+                    subtitle="Keep issue names and mechanic notes hidden until a result is opened"
+                    value={hideSensitiveResults}
+                    onValueChange={(value) => updateSetting("hide_sensitive_results", value, setHideSensitiveResults)}
+                  />
+                  <SettingToggle
+                    title="Require sign-in for history"
+                    subtitle="Block saved diagnostic history when no active user session exists"
+                    value={requireSignInForHistory}
+                    onValueChange={(value) => updateSetting("require_sign_in_for_history", value, setRequireSignInForHistory)}
                   />
                   <SettingToggle
                     title="Share diagnostics with mechanics"
-                    subtitle="Let selected mechanics view diagnostic summaries"
+                    subtitle="Allow only selected mechanics to receive diagnostic summaries"
                     value={diagnosticSharing}
-                    onValueChange={setDiagnosticSharing}
+                    onValueChange={(value) => updateSetting("diagnostic_sharing", value, setDiagnosticSharing)}
                   />
                   <View style={styles.faqItem}>
-                    <Text style={styles.faqQuestion}>Account security</Text>
+                    <Text style={styles.faqQuestion}>What is protected?</Text>
                     <Text style={styles.faqAnswer}>
-                      Your active session is stored securely on-device. Sign out if this is a shared phone.
+                      Your login token is stored in secure device storage. Diagnostic history is stored locally on this phone so the app can work offline. Mechanic sharing stays off unless you turn it on.
+                    </Text>
+                  </View>
+                  <View style={styles.faqItem}>
+                    <Text style={styles.faqQuestion}>Recommended setup</Text>
+                    <Text style={styles.faqAnswer}>
+                      Keep app lock and hidden previews on if this phone is shared. Turn on mechanic sharing only when you are ready to request help.
                     </Text>
                   </View>
                 </>
@@ -540,24 +617,64 @@ export default function ProfileScreen() {
                     title="Dark mode"
                     subtitle={`Currently using ${theme} theme`}
                     value={theme === "dark"}
-                    onValueChange={toggleTheme}
+                    onValueChange={() => {
+                      toggleTheme()
+                      analytics.track("setting_changed", { name: "theme", value: theme === "light" ? "dark" : "light" })
+                    }}
                   />
                   <SettingToggle
                     title="Data saver"
                     subtitle="Reduce background refreshes and heavy media loading"
                     value={dataSaver}
-                    onValueChange={setDataSaver}
+                    onValueChange={(value) => updateSetting("data_saver", value, setDataSaver)}
+                  />
+                  <SettingToggle
+                    title="High quality media"
+                    subtitle="Use clearer previews and larger uploads when available"
+                    value={highQualityMedia}
+                    onValueChange={(value) => updateSetting("high_quality_media", value, setHighQualityMedia)}
+                  />
+                  <SettingToggle
+                    title="Auto-save diagnosis history"
+                    subtitle="Save completed results automatically for later review"
+                    value={autoSaveHistory}
+                    onValueChange={(value) => updateSetting("auto_save_history", value, setAutoSaveHistory)}
+                  />
+                  <SettingToggle
+                    title="Offline support"
+                    subtitle="Keep local data available when connection is poor"
+                    value={offlineMode}
+                    onValueChange={(value) => updateSetting("offline_mode", value, setOfflineMode)}
                   />
                   <SettingToggle
                     title="Usage analytics"
-                    subtitle="Help improve diagnostics with anonymous usage signals"
-                    value={analyticsEnabled}
-                    onValueChange={setAnalyticsEnabled}
+                    subtitle={analytics.enabled ? `${analytics.totalEvents} local events recorded` : "Paused. No new usage events are recorded."}
+                    value={analytics.enabled}
+                    onValueChange={(value) => analytics.setEnabled(value)}
                   />
                   <View style={styles.faqItem}>
                     <Text style={styles.faqQuestion}>Connection</Text>
                     <Text style={styles.faqAnswer}>{isOffline ? "Offline mode is active." : "Connected and ready."}</Text>
                   </View>
+                  <View style={styles.faqItem}>
+                    <Text style={styles.faqQuestion}>Analytics summary</Text>
+                    <Text style={styles.faqAnswer}>
+                      Total events: {analytics.totalEvents}
+                      {"\n"}Last event: {analytics.lastEvent ? analytics.lastEvent.name : "None yet"}
+                      {analytics.topEvents.length > 0
+                        ? `\nTop actions: ${analytics.topEvents.map((event) => `${event.name} (${event.count})`).join(", ")}`
+                        : ""}
+                    </Text>
+                  </View>
+                  <AppButton
+                    label="Clear Analytics Data"
+                    variant="outline"
+                    onPress={() => {
+                      analytics.clearAnalytics()
+                      Alert.alert("Analytics cleared", "Local usage analytics have been deleted.")
+                    }}
+                    style={{ marginTop: Spacing.lg }}
+                  />
                 </>
               )}
 
@@ -659,14 +776,14 @@ export default function ProfileScreen() {
             <Row
               icon={<UserIcon size={20} color={colors.primary} />}
               title="Edit Profile"
-              subtitle="Update your name, email, and mechanic details"
+              subtitle="Update contact, vehicle, location, emergency, and mechanic details"
               onPress={() => handleOpenPanel("edit")}
             />
             <Row
               icon={<Bell size={20} color={colors.primary} />}
               title="Notifications"
               subtitle={`${unreadCount} unread, ${notificationsEnabled ? "enabled" : "disabled"}`}
-              onPress={() => handleOpenPanel("notifications")}
+              onPress={goToNotifications}
             />
             <Row
               icon={<Shield size={20} color={colors.primary} />}

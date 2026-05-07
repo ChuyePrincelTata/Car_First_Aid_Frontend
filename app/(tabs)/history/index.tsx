@@ -6,7 +6,7 @@ import AppButton from "@/components/AppButton"
 import ConfirmActionModal from "@/components/ConfirmActionModal"
 import DiagnosticHistoryCard from "@/components/DiagnosticHistoryCard"
 import ScreenHeader, { SCREEN_HEADER_H } from "@/components/ScreenHeader"
-import { History as HistoryIcon, Trash2, X } from "@/components/SafeLucide"
+import { History as HistoryIcon, Trash2 } from "@/components/SafeLucide"
 import { FontFamily, Spacing } from "@/constants/Theme"
 import { useDiagnosticsContext, type Diagnostic } from "@/context/DiagnosticsContext"
 import { useTheme } from "@/context/ThemeContext"
@@ -217,7 +217,7 @@ export default function HistoryScreen() {
           history.length > 0 ? (
             selectionMode ? (
               <Pressable style={styles.headerAction} onPress={exitSelectionMode}>
-                <X size={20} color={colors.text} />
+                <Text style={styles.headerActionText}>Cancel</Text>
               </Pressable>
             ) : (
               <Pressable style={styles.headerAction} onPress={() => enterSelectionMode()}>
