@@ -20,6 +20,7 @@ const makeSafe = (Icon: any) => {
 export const Activity = makeSafe(Lucide.Activity)
 export const AlertCircle = makeSafe(Lucide.AlertCircle)
 export const AlertTriangle = makeSafe(Lucide.AlertTriangle)
+export const ArrowLeft = makeSafe(Lucide.ArrowLeft)
 export const ArrowRight = makeSafe(Lucide.ArrowRight)
 export const Bell = makeSafe(Lucide.Bell)
 export const Briefcase = makeSafe(Lucide.Briefcase)
