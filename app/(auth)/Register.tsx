@@ -1,25 +1,33 @@
 /**
- * Register.tsx
+ * Register.tsx — Premium auth screen using the app design system
  *
- * Full-screen registration with:
- *  - No OS navigation header
- *  - App logo + name at the top (consistent with Login)
- *  - Live password requirements checker (green/red as user types)
- *  - Password visibility toggle
- *  - Role selector (User / Mechanic)
- *  - Themed inputs with focus highlight
- *  - Button text uses `colors.buttonText` for correct contrast in both modes
+ * Uses the same design tokens (colors, Spacing, Radius, FontSize, FontFamily,
+ * Shadows) and component patterns (AppButton, card surfaces, icon boxes) as
+ * the Home, Profile, and Mechanics screens.
+ *
+ * Premium touches:
+ *  - Smooth staggered entry animations (fade + slide)
+ *  - Logo glow ring in `colors.primary`
+ *  - Icon boxes that highlight on focus (same pattern as Profile iconBox)
+ *  - Password strength bar + live requirement checklist
+ *  - Premium role selector cards with check indicator
+ *  - Elevated card with proper Shadows + hairline border
+ *  - AppButton for submit
+ *  - Correct light/dark handling via colors.X only
  */
 
-import { useState, useMemo, useRef } from "react"
+import { useState, useMemo, useRef, useEffect } from "react"
 import {
   View, Text, TextInput, TouchableOpacity, Image,
   StyleSheet, Alert, ScrollView, KeyboardAvoidingView,
-  Platform, StatusBar, ActivityIndicator,
+  Platform, StatusBar, Animated as RNAnimated,
 } from "react-native"
 import { useRouter } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { Eye, EyeOff, CheckCircle, AlertCircle, User, Wrench } from "@/components/SafeLucide"
+import {
+  Eye, EyeOff, CheckCircle, AlertCircle,
+  User, Wrench, Mail, Lock,
+} from "@/components/SafeLucide"
 import { useAuth } from "@/context/AuthContext"
 import { useTheme } from "@/context/ThemeContext"
 import { Spacing, Radius, FontSize, FontFamily, Shadows } from "@/constants/Theme"
@@ -28,39 +36,61 @@ import React from "react"
 
 /* ── Password rules ──────────────────────────────────────────────────────── */
 const PASSWORD_RULES = [
-  { label: "At least 8 characters",        test: (p: string) => p.length >= 8 },
-  { label: "One uppercase letter (A–Z)",   test: (p: string) => /[A-Z]/.test(p) },
-  { label: "One lowercase letter (a–z)",   test: (p: string) => /[a-z]/.test(p) },
-  { label: "One number (0–9)",             test: (p: string) => /[0-9]/.test(p) },
-  { label: "One special character (!@#$…)",test: (p: string) => /[^A-Za-z0-9]/.test(p) },
+  { label: "At least 8 characters",         test: (p: string) => p.length >= 8 },
+  { label: "One uppercase letter (A–Z)",    test: (p: string) => /[A-Z]/.test(p) },
+  { label: "One lowercase letter (a–z)",    test: (p: string) => /[a-z]/.test(p) },
+  { label: "One number (0–9)",              test: (p: string) => /[0-9]/.test(p) },
+  { label: "One special character (!@#$…)", test: (p: string) => /[^A-Za-z0-9]/.test(p) },
 ]
 
 export default function RegisterScreen() {
-  const [name, setName]               = useState("")
-  const [email, setEmail]             = useState("")
-  const [password, setPassword]       = useState("")
-  const [role, setRole]               = useState<"user" | "mechanic">("user")
+  const [name, setName]                         = useState("")
+  const [email, setEmail]                       = useState("")
+  const [password, setPassword]                 = useState("")
+  const [role, setRole]                         = useState<"user" | "mechanic">("user")
   const [showPassword, setShowPassword]         = useState(false)
   const [showRequirements, setShowRequirements] = useState(false)
-  const [isLoading, setIsLoading]     = useState(false)
+  const [isLoading, setIsLoading]               = useState(false)
 
-  const [nameFocused,  setNameFocused]  = useState(false)
+  const [nameFocused, setNameFocused]   = useState(false)
   const [emailFocused, setEmailFocused] = useState(false)
-  const [passFocused,  setPassFocused]  = useState(false)
+  const [passFocused, setPassFocused]   = useState(false)
 
-  const auth        = useAuth()
-  const { colors, isDark }  = useTheme()
-  const router      = useRouter()
-  const emailRef    = useRef<TextInput>(null)
-  const passRef     = useRef<TextInput>(null)
-  const insets      = useSafeAreaInsets()
+  const auth              = useAuth()
+  const { colors, isDark } = useTheme()
+  const router            = useRouter()
+  const emailRef          = useRef<TextInput>(null)
+  const passRef           = useRef<TextInput>(null)
+  const insets            = useSafeAreaInsets()
 
   const ruleResults    = useMemo(() => PASSWORD_RULES.map(r => r.test(password)), [password])
   const allRulesPassed = ruleResults.every(Boolean)
+  const passedCount    = ruleResults.filter(Boolean).length
+
+  // ── Entry animations ──────────────────────────────────────────────────
+  const logoAnim   = useRef(new RNAnimated.Value(0)).current
+  const titleAnim  = useRef(new RNAnimated.Value(0)).current
+  const cardAnim   = useRef(new RNAnimated.Value(0)).current
+  const footerAnim = useRef(new RNAnimated.Value(0)).current
+
+  useEffect(() => {
+    RNAnimated.stagger(100, [
+      RNAnimated.spring(logoAnim,   { toValue: 1, useNativeDriver: true, tension: 50, friction: 8 }),
+      RNAnimated.spring(titleAnim,  { toValue: 1, useNativeDriver: true, tension: 50, friction: 8 }),
+      RNAnimated.spring(cardAnim,   { toValue: 1, useNativeDriver: true, tension: 50, friction: 8 }),
+      RNAnimated.spring(footerAnim, { toValue: 1, useNativeDriver: true, tension: 50, friction: 8 }),
+    ]).start()
+  }, [])
+
+  const makeEntryStyle = (anim: RNAnimated.Value) => ({
+    opacity: anim,
+    transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [24, 0] }) }],
+  })
 
   if (!auth) return null
   const { signUp } = auth
 
+  // ── Handlers ──────────────────────────────────────────────────────────
   const handleRegister = async () => {
     if (!name.trim() || !email.trim() || !password) {
       Alert.alert("Missing fields", "Please fill in all fields.")
@@ -93,70 +123,119 @@ export default function RegisterScreen() {
     }
   }
 
-  /* ── helpers ─────────────────────────────────────────────────────────── */
+  // ── Focus-dependent input border ──────────────────────────────────────
   const inputBorder = (focused: boolean) => ({
     borderColor: focused ? colors.primary : colors.border,
     borderWidth: focused ? 1.5 : 1,
   })
 
-  /* ── styles ──────────────────────────────────────────────────────────── */
+  // ── Strength bar colour ───────────────────────────────────────────────
+  const strengthColor = passedCount <= 1 ? colors.error
+    : passedCount <= 3 ? colors.warning
+    : passedCount <= 4 ? colors.primary
+    : colors.success
+
+  // ── Styles (inside render for theme access) ───────────────────────────
   const s = StyleSheet.create({
-    screen: { flex: 1, backgroundColor: colors.background },
-    scroll: { flexGrow: 1 },
-    inner: {
+    screen: {
       flex: 1,
+      backgroundColor: colors.background,
+    },
+    scroll: {
+      flexGrow: 1,
       paddingHorizontal: Spacing.xl,
-      paddingBottom: Spacing.xxxl,
     },
 
-    brandBlock: {
+    /* ── Logo section (identical to Login) ── */
+    logoSection: {
       alignItems: "center",
-      paddingTop: insets.top + Spacing.lg,
-      paddingBottom: Spacing.xl,
+      paddingTop: insets.top + Spacing.xl,
+      marginBottom: Spacing.md,
     },
-    logoWrapper: {
-      width: 72,
-      height: 72,
-      borderRadius: Radius.lg,
+    logoGlow: {
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.25,
+      shadowRadius: 12,
+      elevation: 8,
+    },
+    logoRing: {
+      width: 88,
+      height: 88,
+      borderRadius: Radius.xl + 4,
+      borderWidth: 2,
+      borderColor: colors.primary + "30",
+      padding: 3,
       overflow: "hidden",
-      marginBottom: Spacing.sm,
-      ...Shadows.md,
     },
-    logo: { width: "100%", height: "100%" },
-    appName: {
-      fontSize: FontSize.xl,
-      fontFamily: FontFamily.bold,
+    logoImage: {
+      width: "100%",
+      height: "100%",
+      borderRadius: Radius.xl + 1,
+    },
+
+    /* ── Hero text ── */
+    heroBlock: {
+      alignItems: "center",
+      marginBottom: Spacing.xl,
+    },
+    joinLabel: {
+      fontSize: FontSize.sm,
+      fontFamily: FontFamily.medium,
       color: colors.primary,
-      letterSpacing: -0.3,
-      marginBottom: 2,
+      letterSpacing: 1.5,
+      textTransform: "uppercase",
+      marginBottom: Spacing.xs,
     },
-    tagline: {
-      fontSize: FontSize.xs,
+    heroTitle: {
+      fontSize: FontSize.xxl,
+      fontFamily: FontFamily.bold,
+      color: colors.text,
+      letterSpacing: -0.5,
+      marginBottom: Spacing.xs,
+      textAlign: "center",
+    },
+    heroPrimarySpan: {
+      color: colors.primary,
+    },
+    heroSub: {
+      fontSize: FontSize.sm,
       fontFamily: FontFamily.regular,
       color: colors.subtext,
+      textAlign: "center",
     },
 
-    formSection: {
+    /* ── Form card ── */
+    formCard: {
       backgroundColor: colors.card,
       borderRadius: Radius.xl,
       padding: Spacing.xl,
-      ...Shadows.sm,
-    },
-    sectionTitle: {
-      fontSize: FontSize.lg,
-      fontFamily: FontFamily.bold,
-      color: colors.text,
-      marginBottom: Spacing.base,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+      ...Shadows.md,
     },
 
+    /* ── Input row ── */
     inputRow: {
       flexDirection: "row",
       alignItems: "center",
       borderRadius: Radius.lg,
       backgroundColor: colors.background,
       marginBottom: Spacing.md,
-      paddingHorizontal: Spacing.md,
-      height: 52,
+      paddingRight: Spacing.md,
+      height: 54,
+    },
+    inputIconBox: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      alignItems: "center",
+      justifyContent: "center",
+      marginLeft: Spacing.sm,
+      marginRight: Spacing.xs,
+    },
+    inputIconBoxActive: {
+      backgroundColor: colors.primary + "12",
     },
     input: {
       flex: 1,
@@ -164,51 +243,98 @@ export default function RegisterScreen() {
       fontFamily: FontFamily.regular,
       color: colors.text,
     },
-    eyeBtn: { padding: Spacing.xs },
+    eyeBtn: {
+      padding: Spacing.xs,
+    },
 
-    /* ── requirements box ── */
+    /* ── Password strength section ── */
+    strengthSection: {
+      marginBottom: Spacing.base,
+      marginTop: -Spacing.xs,
+    },
+    strengthBarTrack: {
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: colors.border,
+      marginBottom: Spacing.sm,
+      overflow: "hidden",
+    },
+    strengthBarFill: {
+      height: "100%",
+      borderRadius: 2,
+    },
+    strengthLabel: {
+      fontSize: FontSize.xs,
+      fontFamily: FontFamily.semiBold,
+      marginBottom: Spacing.sm,
+    },
     reqBox: {
       backgroundColor: isDark ? colors.background : "#f8fafc",
       borderRadius: Radius.md,
       padding: Spacing.md,
-      marginBottom: Spacing.md,
       borderWidth: 1,
       borderColor: colors.border,
     },
-    reqTitle: {
+    reqRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 5,
+    },
+    reqText: {
       fontSize: FontSize.sm,
       fontFamily: FontFamily.medium,
-      color: colors.text,
-      marginBottom: Spacing.sm,
+      marginLeft: Spacing.sm,
     },
-    reqRow:  { flexDirection: "row", alignItems: "center", marginBottom: 5 },
-    reqText: { fontSize: FontSize.sm, marginLeft: 6 },
 
-    /* ── role selector ── */
+    /* ── Role selector ── */
     roleLabel: {
       fontSize: FontSize.sm,
       fontFamily: FontFamily.medium,
       color: colors.subtext,
       marginBottom: Spacing.sm,
     },
-    roleRow: { flexDirection: "row", gap: Spacing.sm, marginBottom: Spacing.base },
+    roleRow: {
+      gap: Spacing.sm,
+      marginBottom: Spacing.lg,
+    },
     roleBtn: {
-      flex: 1,
       flexDirection: "row",
       alignItems: "center",
-      justifyContent: "center",
-      gap: 6,
-      padding: Spacing.md,
       borderRadius: Radius.lg,
       borderWidth: 1.5,
+      padding: Spacing.md,
+      gap: Spacing.md,
     },
-    roleText: { fontSize: FontSize.md, fontFamily: FontFamily.medium },
+    roleIconBox: {
+      width: 42,
+      height: 42,
+      borderRadius: 21,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    roleTextBlock: {
+      flex: 1,
+    },
+    roleTitle: {
+      fontSize: FontSize.md,
+      fontFamily: FontFamily.bold,
+    },
+    roleSub: {
+      fontSize: FontSize.xs,
+      fontFamily: FontFamily.regular,
+      color: colors.subtext,
+      marginTop: 1,
+    },
 
-    /* ── login link ── */
+    /* ── Footer ── */
+    footer: {
+      marginTop: Spacing.xl,
+      paddingBottom: Spacing.md,
+    },
     loginRow: {
       flexDirection: "row",
       justifyContent: "center",
-      marginTop: Spacing.lg,
+      alignItems: "center",
     },
     loginText: {
       fontSize: FontSize.md,
@@ -219,12 +345,9 @@ export default function RegisterScreen() {
       fontSize: FontSize.md,
       fontFamily: FontFamily.bold,
       color: colors.primary,
-      marginLeft: 4,
+      marginLeft: Spacing.xs,
     },
   })
-
-  const SUCCESS = "#22c55e"
-  const FAIL    = isDark ? "#f87171" : "#ef4444"
 
   return (
     <KeyboardAvoidingView
@@ -235,24 +358,43 @@ export default function RegisterScreen() {
         barStyle={isDark ? "light-content" : "dark-content"}
         backgroundColor={colors.background}
       />
-      <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
-        <View style={s.inner}>
 
-          {/* ── Branding ── */}
-          <View style={s.brandBlock}>
-            <View style={s.logoWrapper}>
-              <Image source={require("../../assets/images/logo.jpg")} style={s.logo} resizeMode="cover" />
+      <ScrollView
+        contentContainerStyle={[s.scroll, { paddingBottom: insets.bottom + Spacing.xxxl }]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── Logo (identical to Login) ── */}
+        <RNAnimated.View style={[s.logoSection, makeEntryStyle(logoAnim)]}>
+          <View style={s.logoGlow}>
+            <View style={s.logoRing}>
+              <Image
+                source={require("../../assets/images/logo.jpg")}
+                style={s.logoImage}
+                resizeMode="cover"
+              />
             </View>
-            <Text style={s.appName}>Car First Aid</Text>
-            <Text style={s.tagline}>Create your account to get started</Text>
           </View>
+        </RNAnimated.View>
 
-          {/* ── Form card ── */}
-          <View style={s.formSection}>
-            <Text style={s.sectionTitle}>Create account</Text>
+        {/* ── Hero text ── */}
+        <RNAnimated.View style={[s.heroBlock, makeEntryStyle(titleAnim)]}>
+          <Text style={s.joinLabel}>Get started</Text>
+          <Text style={s.heroTitle}>
+            Create your <Text style={s.heroPrimarySpan}>account</Text>
+          </Text>
+          <Text style={s.heroSub}>Join thousands of drivers getting smarter diagnostics</Text>
+        </RNAnimated.View>
+
+        {/* ── Form card ── */}
+        <RNAnimated.View style={makeEntryStyle(cardAnim)}>
+          <View style={s.formCard}>
 
             {/* Full name */}
             <View style={[s.inputRow, inputBorder(nameFocused)]}>
+              <View style={[s.inputIconBox, nameFocused && s.inputIconBoxActive]}>
+                <User size={18} color={nameFocused ? colors.primary : colors.subtext} />
+              </View>
               <TextInput
                 style={s.input}
                 placeholder="Full name"
@@ -269,6 +411,9 @@ export default function RegisterScreen() {
 
             {/* Email */}
             <View style={[s.inputRow, inputBorder(emailFocused)]}>
+              <View style={[s.inputIconBox, emailFocused && s.inputIconBoxActive]}>
+                <Mail size={18} color={emailFocused ? colors.primary : colors.subtext} />
+              </View>
               <TextInput
                 ref={emailRef}
                 style={s.input}
@@ -287,6 +432,9 @@ export default function RegisterScreen() {
 
             {/* Password */}
             <View style={[s.inputRow, inputBorder(passFocused)]}>
+              <View style={[s.inputIconBox, passFocused && s.inputIconBoxActive]}>
+                <Lock size={18} color={passFocused ? colors.primary : colors.subtext} />
+              </View>
               <TextInput
                 ref={passRef}
                 style={s.input}
@@ -308,25 +456,38 @@ export default function RegisterScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Live requirements */}
+            {/* ── Password strength ── */}
             {showRequirements && (
-              <View style={s.reqBox}>
-                <Text style={s.reqTitle}>Password requirements</Text>
-                {PASSWORD_RULES.map((rule, i) => (
-                  <View key={i} style={s.reqRow}>
-                    {ruleResults[i]
-                      ? <CheckCircle size={13} color={SUCCESS} />
-                      : <AlertCircle size={13} color={FAIL} />
-                    }
-                    <Text style={[s.reqText, { color: ruleResults[i] ? SUCCESS : FAIL }]}>
-                      {rule.label}
-                    </Text>
-                  </View>
-                ))}
+              <View style={s.strengthSection}>
+                {/* Strength bar */}
+                <View style={s.strengthBarTrack}>
+                  <View style={[
+                    s.strengthBarFill,
+                    { width: `${(passedCount / PASSWORD_RULES.length) * 100}%`, backgroundColor: strengthColor },
+                  ]} />
+                </View>
+                <Text style={[s.strengthLabel, { color: strengthColor }]}>
+                  {passedCount === 0 ? "" : passedCount <= 2 ? "Weak" : passedCount <= 4 ? "Good" : "Strong"}
+                </Text>
+
+                {/* Rule list */}
+                <View style={s.reqBox}>
+                  {PASSWORD_RULES.map((rule, i) => (
+                    <View key={i} style={s.reqRow}>
+                      {ruleResults[i]
+                        ? <CheckCircle size={13} color={colors.success} />
+                        : <AlertCircle size={13} color={colors.error} />
+                      }
+                      <Text style={[s.reqText, { color: ruleResults[i] ? colors.success : colors.error }]}>
+                        {rule.label}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
               </View>
             )}
 
-            {/* Role selector */}
+            {/* ── Role selector ── */}
             <Text style={s.roleLabel}>I am a…</Text>
             <View style={s.roleRow}>
               {(["user", "mechanic"] as const).map((r) => {
@@ -338,43 +499,56 @@ export default function RegisterScreen() {
                       s.roleBtn,
                       {
                         borderColor:     isActive ? colors.primary : colors.border,
-                        backgroundColor: isActive ? colors.primaryLight ?? colors.border : "transparent",
+                        backgroundColor: isActive
+                          ? (colors.primaryLight ?? colors.border)
+                          : colors.background,
                       },
                     ]}
                     onPress={() => setRole(r)}
                     activeOpacity={0.75}
                   >
-                    {r === "user"
-                      ? <User    size={15} color={isActive ? colors.primary : colors.subtext} />
-                      : <Wrench  size={15} color={isActive ? colors.primary : colors.subtext} />
-                    }
-                    <Text style={[s.roleText, { color: isActive ? colors.primary : colors.subtext }]}>
-                      {r === "user" ? "Car Owner" : "Mechanic"}
-                    </Text>
+                    <View style={[s.roleIconBox, {
+                      backgroundColor: colors.primary + "12",
+                    }]}>
+                      {r === "user"
+                        ? <User   size={20} color={isActive ? colors.primary : colors.subtext} />
+                        : <Wrench size={20} color={isActive ? colors.primary : colors.subtext} />
+                      }
+                    </View>
+                    <View style={s.roleTextBlock}>
+                      <Text style={[s.roleTitle, { color: isActive ? colors.primary : colors.text }]}>
+                        {r === "user" ? "Car Owner" : "Mechanic"}
+                      </Text>
+                      <Text style={s.roleSub}>
+                        {r === "user" ? "Get diagnostics for your car" : "Help drivers fix their cars"}
+                      </Text>
+                    </View>
+                    {isActive && <CheckCircle size={20} color={colors.primary} />}
                   </TouchableOpacity>
                 )
               })}
             </View>
 
-            {/* Submit */}
+            {/* ── Create Account — uses AppButton ── */}
             <AppButton
               label="Create Account"
               onPress={handleRegister}
               loading={isLoading}
               size="lg"
-              style={{ marginTop: Spacing.sm }}
+              style={{ marginTop: Spacing.xs }}
             />
           </View>
+        </RNAnimated.View>
 
-          {/* ── Login link ── */}
+        {/* ── Footer ── */}
+        <RNAnimated.View style={[s.footer, makeEntryStyle(footerAnim)]}>
           <View style={s.loginRow}>
             <Text style={s.loginText}>Already have an account?</Text>
             <TouchableOpacity onPress={() => router.push("/(auth)/Login")}>
               <Text style={s.loginLink}>Sign in</Text>
             </TouchableOpacity>
           </View>
-
-        </View>
+        </RNAnimated.View>
       </ScrollView>
     </KeyboardAvoidingView>
   )
