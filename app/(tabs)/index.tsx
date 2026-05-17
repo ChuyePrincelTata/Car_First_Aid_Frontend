@@ -7,6 +7,7 @@ import { useRouter } from "expo-router"
 import React from "react"
 import { FontFamily } from "@/constants/Theme"
 import AppButton from "@/components/AppButton"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 const { width } = Dimensions.get("window")
 
@@ -14,6 +15,7 @@ export default function HomeScreen() {
   const { colors, isDark } = useTheme()
   const { user } = useAuth()
   const router = useRouter()
+  const insets = useSafeAreaInsets()
 
   const styles = StyleSheet.create({
     container: {
@@ -21,9 +23,9 @@ export default function HomeScreen() {
       backgroundColor: colors.background,
     },
     header: {
-      paddingTop: 16,
+      paddingTop: insets.top + 16,
       paddingHorizontal: 24,
-      paddingBottom: 0, // Reduced from 8 to tighten gap
+      paddingBottom: 0,
     },
     greeting: {
       fontSize: 14,
@@ -264,7 +266,7 @@ export default function HomeScreen() {
                 <Text style={styles.tileDesc}>Ask a professional</Text>
               </View>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.gridTile} onPress={() => router.push("./(tabs)/diagnose/manual")}>
+            <TouchableOpacity style={styles.gridTile} onPress={() => router.push("/(tabs)/diagnose/manual")}>
               <View style={styles.tileIconWrap}>
                 <AlertTriangle size={22} color={colors.primary} />
               </View>
