@@ -15,7 +15,7 @@
  */
 
 import { Image, View, Text, StyleSheet, TouchableOpacity } from "react-native"
-import { Tabs, useRouter } from "expo-router"
+import { Redirect, Tabs, useRouter } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Home, Camera, MessageSquare, History, User, Bell, Search, Activity, Wrench, ClipboardList } from "@/components/SafeLucide"
 import { useTheme } from "@/context/ThemeContext"
@@ -24,6 +24,7 @@ import SearchModal from "@/components/SearchModal"
 import React, { useState } from "react"
 import { FontSize, FontFamily, Spacing, Radius } from "@/constants/Theme"
 import CustomTabBar from "@/components/CustomTabBar"
+import { useAuth } from "@/context/AuthContext"
 
 // ─── Shared header row (logo + bell + avatar) ─────────────────────────────
 function HeaderTop() {
@@ -160,6 +161,11 @@ const wrap = StyleSheet.create({
 export default function TabLayout() {
   const { colors, isDark } = useTheme()
   const insets             = useSafeAreaInsets()
+  const { user, mechanic } = useAuth()
+
+  if (user?.role === "mechanic" && !mechanic.isVerified) {
+    return <Redirect href="/(mechanic)/verification" />
+  }
 
   return (
     <Tabs

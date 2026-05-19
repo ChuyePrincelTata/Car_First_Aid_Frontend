@@ -1,365 +1,534 @@
-
-
-import { useState, useEffect } from "react"
-import { StyleSheet, Text, View, TouchableOpacity, Image, ScrollView, ActivityIndicator, Alert } from "react-native"
-import { useTheme } from "@/context/ThemeContext"
-import { useAuth } from "@/context/AuthContext"
+import React, { useEffect, useRef, useState } from "react"
+import { Animated, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 import { useRouter } from "expo-router"
-import { Upload, CheckCircle, FileText } from "@/components/SafeLucide"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 import * as ImagePicker from "expo-image-picker"
 import AppButton from "@/components/AppButton"
-import React from "react"
+import ScreenHeader, { SCREEN_HEADER_H } from "@/components/ScreenHeader"
+import {
+  Camera,
+  CheckCircle,
+  Clock,
+  FileText,
+  Shield,
+  Star,
+  Upload,
+  X,
+} from "@/components/SafeLucide"
+import { FontFamily, FontSize, Radius, Shadows, Spacing } from "@/constants/Theme"
+import { useAppModal } from "@/context/AppModalContext"
+import { useAuth } from "@/context/AuthContext"
+import { useTheme } from "@/context/ThemeContext"
+
+const REQUIREMENTS = [
+  "Valid professional mechanic certification or license",
+  "Readable photo showing your name and certification details",
+  "Current repair shop proof if available",
+  "Specialized training certificates if available",
+]
 
 export default function MechanicVerificationScreen() {
   const [certificateUri, setCertificateUri] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
-  const { colors } = useTheme()
-  const { mechanic } = useAuth()
+  const progressAnim = useRef(new Animated.Value(0)).current
   const router = useRouter()
+  const insets = useSafeAreaInsets()
+  const { colors, isDark } = useTheme()
+  const { mechanic, signOut } = useAuth()
+  const { showAlert } = useAppModal()
+  const verificationStatus = mechanic.verificationStatus
+  const isPendingReview = verificationStatus === "pending"
+  const isRejected = verificationStatus === "rejected"
 
-  // Handle navigation when mechanic is verified
   useEffect(() => {
-    if (mechanic.isVerified && router.canGoBack()) {
+    if (mechanic.isVerified) {
       router.replace("/(tabs)")
     }
   }, [mechanic.isVerified, router])
 
+  useEffect(() => {
+    Animated.timing(progressAnim, {
+      toValue: uploadProgress,
+      duration: 240,
+      useNativeDriver: false,
+    }).start()
+  }, [progressAnim, uploadProgress])
+
   const pickDocument = async () => {
     try {
-      // Request media library permissions if needed
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync()
 
       if (!permissionResult.granted) {
-        Alert.alert("Permission Required", "You need to grant access to your photo library to upload a certificate.")
+        showAlert({
+          title: "Permission required",
+          message: "Grant photo library access so you can upload your certification.",
+          tone: "warning",
+        })
         return
       }
 
-      // Fixed: Using MediaTypeOptions instead of MediaType
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
-        quality: 0.8, // Reduced quality for faster upload
+        quality: 0.85,
         allowsMultipleSelection: false,
       })
 
-      if (!result.canceled && result.assets && result.assets.length > 0) {
+      if (!result.canceled && result.assets?.length) {
         setCertificateUri(result.assets[0].uri)
-        console.log("Selected certificate:", result.assets[0].uri)
       }
     } catch (error) {
       console.error("Error picking document:", error)
-    
-      Alert.alert("Error", `Failed to select image:`)
+      showAlert({
+        title: "Could not select image",
+        message: "Failed to select image. Please try again.",
+        tone: "danger",
+      })
     }
   }
 
   const handleUpload = async () => {
     if (!certificateUri) {
-      Alert.alert("Error", "Please select a certificate image first")
+      showAlert({
+        title: "Certificate required",
+        message: "Please select a clear certificate image first.",
+        tone: "warning",
+      })
       return
     }
 
     setUploading(true)
-    setUploadProgress(0)
+    setUploadProgress(8)
+
+    const progressInterval = setInterval(() => {
+      setUploadProgress((prev) => (prev >= 92 ? prev : prev + 7))
+    }, 180)
 
     try {
-      console.log("Starting certificate upload...")
-
-      // Simulate progress for better UX
-      const progressInterval = setInterval(() => {
-        setUploadProgress((prev) => {
-          if (prev >= 90) {
-            clearInterval(progressInterval)
-            return prev
-          }
-          return prev + 10
-        })
-      }, 200)
-
-      // Create form data for the image upload
-      const formData = new FormData()
-
-      // Get file name from URI
-      const uriParts = certificateUri.split("/")
-      const fileName = uriParts[uriParts.length - 1] || "certificate.jpg"
-
-      // Append the image to form data
-      formData.append("file", {
-        uri: certificateUri,
-        type: "image/jpeg",
-        name: fileName,
-      } as any)
-
-      // For now, use the mock upload from AuthContext
-      // In production, this would call your FastAPI backend
       await mechanic.uploadCertificate(certificateUri)
-
       clearInterval(progressInterval)
       setUploadProgress(100)
 
-      // Small delay to show 100% progress
       setTimeout(() => {
-        Alert.alert(
-          "Upload Successful",
-          "Your certificate has been uploaded successfully. You will be notified once it's verified.",
-          [
-            {
-              text: "OK",
-              onPress: () => router.replace("/(tabs)"),
-            },
-          ],
-        )
-      }, 500)
+        setUploading(false)
+        showAlert({
+          title: "Submitted for review",
+          message: "Your certificate has been uploaded. We will notify you once your mechanic profile is verified.",
+          tone: "success",
+          confirmLabel: "Got it",
+        })
+      }, 450)
     } catch (error) {
+      clearInterval(progressInterval)
       console.error("Error uploading certificate:", error)
-      Alert.alert("Upload Failed", `There was a problem uploading your certificate:`)
-    } finally {
       setUploading(false)
       setUploadProgress(0)
+      showAlert({
+        title: "Upload failed",
+        message: "There was a problem uploading your certificate. Please check your connection and try again.",
+        tone: "danger",
+      })
     }
   }
 
-  const retakePhoto = () => {
+  const clearSelection = () => {
     setCertificateUri(null)
+    setUploadProgress(0)
   }
+
+  const handleSignOut = async () => {
+    await signOut()
+    router.replace("/(auth)/Login")
+  }
+
+  const progressWidth = progressAnim.interpolate({
+    inputRange: [0, 100],
+    outputRange: ["0%", "100%"],
+  })
 
   const styles = StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: colors.background,
     },
-    scrollContent: {
-      flexGrow: 1,
-      padding: 24,
+    content: {
+      paddingTop: insets.top + SCREEN_HEADER_H + Spacing.lg,
+      paddingHorizontal: Spacing.base,
+      paddingBottom: insets.bottom + Spacing.xxl,
     },
-    header: {
+    hero: {
+      backgroundColor: isDark ? colors.card : "#ffffff",
+      borderRadius: Radius.xl,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+      padding: Spacing.lg,
+      ...Shadows.sm,
+    },
+    heroTop: {
+      flexDirection: "row",
       alignItems: "center",
-      marginTop: 40,
-      marginBottom: 30,
+      gap: Spacing.md,
+      marginBottom: Spacing.md,
+    },
+    heroIcon: {
+      width: 54,
+      height: 54,
+      borderRadius: 27,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.primary + "16",
+    },
+    eyebrow: {
+      color: colors.primary,
+      fontFamily: FontFamily.semiBold,
+      fontSize: FontSize.xs,
+      textTransform: "uppercase",
     },
     title: {
-      fontSize: 28,
-      fontFamily: "Poppins-Bold",
       color: colors.text,
-      marginBottom: 8,
-      textAlign: "center",
+      fontFamily: FontFamily.bold,
+      fontSize: FontSize.xl,
+      lineHeight: 30,
+      marginTop: 2,
     },
     subtitle: {
-      fontSize: 16,
-      fontFamily: "Poppins-Regular",
-      color: colors.tabIconDefault,
-      textAlign: "center",
-      marginBottom: 16,
+      color: colors.subtext,
+      fontFamily: FontFamily.regular,
+      fontSize: FontSize.sm,
+      lineHeight: 21,
     },
-    uploadSection: {
-      marginTop: 20,
-    },
-    uploadTitle: {
-      fontSize: 18,
-      fontFamily: "Poppins-Medium",
-      color: colors.text,
-      marginBottom: 16,
-    },
-    uploadContainer: {
-      height: 200,
-      borderWidth: 2,
-      borderColor: colors.border,
-      borderStyle: "dashed",
-      borderRadius: 16,
-      justifyContent: "center",
+    statusRow: {
+      flexDirection: "row",
       alignItems: "center",
-      backgroundColor: colors.card,
-      marginBottom: 20,
+      gap: Spacing.sm,
+      borderRadius: Radius.lg,
+      padding: Spacing.md,
+      marginTop: Spacing.md,
+      backgroundColor: colors.primary + "10",
+    },
+    statusText: {
+      flex: 1,
+      color: colors.text,
+      fontFamily: FontFamily.medium,
+      fontSize: FontSize.sm,
+      lineHeight: 20,
+    },
+    section: {
+      marginTop: Spacing.lg,
+    },
+    sectionTitle: {
+      color: colors.text,
+      fontFamily: FontFamily.bold,
+      fontSize: FontSize.md,
+      marginBottom: Spacing.md,
+    },
+    uploadBox: {
+      minHeight: 230,
+      borderRadius: Radius.xl,
+      borderWidth: 1.5,
+      borderStyle: "dashed",
+      borderColor: certificateUri ? colors.primary + "55" : colors.border,
+      backgroundColor: isDark ? colors.card : "#ffffff",
+      overflow: "hidden",
+      ...Shadows.sm,
+    },
+    emptyUpload: {
+      flex: 1,
+      minHeight: 230,
+      alignItems: "center",
+      justifyContent: "center",
+      padding: Spacing.xl,
     },
     uploadIcon: {
-      marginBottom: 16,
-      padding: 16,
-      borderRadius: 50,
-      backgroundColor: "rgba(255, 215, 0, 0.1)",
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.primary + "14",
+      marginBottom: Spacing.md,
+    },
+    uploadTitle: {
+      color: colors.text,
+      fontFamily: FontFamily.bold,
+      fontSize: FontSize.md,
+      textAlign: "center",
+      marginBottom: Spacing.xs,
     },
     uploadText: {
-      fontSize: 16,
-      fontFamily: "Poppins-Regular",
-      color: colors.tabIconDefault,
+      color: colors.subtext,
+      fontFamily: FontFamily.regular,
+      fontSize: FontSize.sm,
       textAlign: "center",
-      marginHorizontal: 32,
+      lineHeight: 21,
+      maxWidth: 280,
     },
-    certificatePreview: {
+    preview: {
       width: "100%",
-      height: 200,
-      borderRadius: 16,
-      marginBottom: 20,
+      height: 230,
     },
-    imageActions: {
+    previewOverlay: {
+      position: "absolute",
+      left: 12,
+      right: 12,
+      bottom: 12,
       flexDirection: "row",
+      alignItems: "center",
       justifyContent: "space-between",
-      marginBottom: 20,
+      gap: Spacing.sm,
     },
-    requirementSection: {
-      marginTop: 20,
-      marginBottom: 30,
+    previewPill: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: Spacing.sm,
+      borderRadius: Radius.full,
+      paddingHorizontal: Spacing.md,
+      height: 38,
+      backgroundColor: "rgba(10, 15, 28, 0.72)",
     },
-    requirementTitle: {
-      fontSize: 18,
-      fontFamily: "Poppins-Medium",
+    previewPillText: {
+      flex: 1,
+      color: "#ffffff",
+      fontFamily: FontFamily.medium,
+      fontSize: FontSize.xs,
+    },
+    removeButton: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "rgba(10, 15, 28, 0.72)",
+    },
+    actionRow: {
+      flexDirection: "row",
+      gap: Spacing.sm,
+      marginTop: Spacing.md,
+    },
+    progressCard: {
+      backgroundColor: isDark ? colors.card : "#ffffff",
+      borderRadius: Radius.xl,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+      padding: Spacing.lg,
+      marginTop: Spacing.lg,
+      ...Shadows.sm,
+    },
+    progressHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: Spacing.md,
+    },
+    progressTitle: {
       color: colors.text,
-      marginBottom: 16,
+      fontFamily: FontFamily.bold,
+      fontSize: FontSize.sm,
+    },
+    progressText: {
+      color: colors.primary,
+      fontFamily: FontFamily.bold,
+      fontSize: FontSize.sm,
+    },
+    progressTrack: {
+      height: 8,
+      borderRadius: 4,
+      overflow: "hidden",
+      backgroundColor: isDark ? colors.background : "#e2e8f0",
+    },
+    progressFill: {
+      height: "100%",
+      borderRadius: 4,
+      backgroundColor: colors.primary,
+    },
+    requirementCard: {
+      backgroundColor: isDark ? colors.card : "#ffffff",
+      borderRadius: Radius.xl,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+      padding: Spacing.lg,
+      ...Shadows.sm,
     },
     requirementItem: {
       flexDirection: "row",
       alignItems: "flex-start",
-      marginBottom: 12,
+      gap: Spacing.md,
+      marginBottom: Spacing.md,
     },
-    checkIcon: {
-      marginRight: 10,
-      marginTop: 2,
+    requirementIcon: {
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.success + "16",
     },
     requirementText: {
       flex: 1,
-      fontSize: 14,
-      fontFamily: "Poppins-Regular",
       color: colors.text,
+      fontFamily: FontFamily.regular,
+      fontSize: FontSize.sm,
+      lineHeight: 21,
     },
-    noteText: {
-      fontSize: 14,
-      fontFamily: "Poppins-Regular",
-      color: colors.tabIconDefault,
-      textAlign: "center",
-      marginTop: 16,
+    reviewNote: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: Spacing.md,
+      borderRadius: Radius.lg,
+      padding: Spacing.md,
+      backgroundColor: colors.primary + "10",
     },
-    progressContainer: {
-      marginTop: 20,
-      alignItems: "center",
-    },
-    progressBar: {
-      width: 200,
-      height: 4,
-      backgroundColor: "rgba(0,0,0,0.1)",
-      borderRadius: 2,
-      overflow: "hidden",
-    },
-    progressFill: {
-      height: "100%",
-      backgroundColor: colors.primary,
-      borderRadius: 2,
-    },
-    progressText: {
-      marginTop: 10,
-      fontSize: 14,
-      fontFamily: "Poppins-Medium",
-      color: colors.text,
-    },
-    loadingContainer: {
-      justifyContent: "center",
-      alignItems: "center",
-      padding: 40,
-    },
-    loadingText: {
-      marginTop: 20,
-      fontSize: 16,
-      fontFamily: "Poppins-Medium",
-      color: colors.text,
-      textAlign: "center",
+    reviewNoteText: {
+      flex: 1,
+      color: colors.subtext,
+      fontFamily: FontFamily.regular,
+      fontSize: FontSize.sm,
+      lineHeight: 20,
     },
   })
 
-  if (uploading) {
-    return (
-      <View style={[styles.container, styles.loadingContainer]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Uploading your certificate...</Text>
-        {uploadProgress > 0 && (
-          <View style={styles.progressContainer}>
-            <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: `${uploadProgress}%` }]} />
-            </View>
-            <Text style={styles.progressText}>{Math.round(uploadProgress)}%</Text>
-          </View>
-        )}
-      </View>
-    )
-  }
-
-  // Don't render anything if mechanic is verified (navigation will handle it)
-  if (mechanic.isVerified) {
-    return null
-  }
+  if (mechanic.isVerified) return null
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <FileText size={60} color={colors.primary} />
-          <Text style={styles.title}>Mechanic Verification</Text>
-          <Text style={styles.subtitle}>Please upload your mechanic certification to get verified</Text>
+      <ScreenHeader
+        title="Mechanic Verification"
+        right={
+          <TouchableOpacity onPress={handleSignOut} style={{ minWidth: 44, height: 36, alignItems: "flex-end", justifyContent: "center" }}>
+            <Text style={{ color: colors.primary, fontFamily: FontFamily.medium, fontSize: FontSize.sm }}>Sign out</Text>
+          </TouchableOpacity>
+        }
+      />
+
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.hero}>
+          <View style={styles.heroTop}>
+            <View style={styles.heroIcon}>
+              <Shield size={28} color={colors.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.eyebrow}>{isPendingReview ? "Review in progress" : isRejected ? "Action needed" : "Verification required"}</Text>
+              <Text style={styles.title}>{isPendingReview ? "Your certificate is being reviewed" : "Build trust before taking jobs"}</Text>
+            </View>
+          </View>
+          <Text style={styles.subtitle}>
+            {isPendingReview
+              ? "You cannot access the main dashboard until your mechanic profile is approved. We will keep this screen ready while your document is reviewed."
+              : isRejected
+                ? "Your previous document could not be approved. Upload a clearer certification or license to request another review."
+                : "Upload a clear mechanic certification or license. Your profile stays pending while our team reviews the document."}
+          </Text>
+          <View style={styles.statusRow}>
+            <Clock size={18} color={colors.primary} />
+            <Text style={styles.statusText}>Most reviews are completed within 1-2 business days.</Text>
+          </View>
         </View>
 
-        <View style={styles.uploadSection}>
-          <Text style={styles.uploadTitle}>Upload Certification</Text>
-
-          {!certificateUri ? (
-            <TouchableOpacity style={styles.uploadContainer} onPress={pickDocument}>
-              <View style={styles.uploadIcon}>
-                <Upload size={32} color={colors.primary} />
-              </View>
-              <Text style={styles.uploadText}>Tap to upload a photo of your mechanic certification or license</Text>
+        {!isPendingReview ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Certification Document</Text>
+            <TouchableOpacity style={styles.uploadBox} activeOpacity={0.82} onPress={certificateUri ? undefined : pickDocument}>
+              {certificateUri ? (
+                <>
+                  <Image source={{ uri: certificateUri }} style={styles.preview} resizeMode="cover" />
+                  <View style={styles.previewOverlay}>
+                    <View style={styles.previewPill}>
+                      <CheckCircle size={16} color="#ffffff" />
+                      <Text style={styles.previewPillText} numberOfLines={1}>Certificate image selected</Text>
+                    </View>
+                    <TouchableOpacity style={styles.removeButton} onPress={clearSelection}>
+                      <X size={18} color="#ffffff" />
+                    </TouchableOpacity>
+                  </View>
+                </>
+              ) : (
+                <View style={styles.emptyUpload}>
+                  <View style={styles.uploadIcon}>
+                    <Camera size={30} color={colors.primary} />
+                  </View>
+                  <Text style={styles.uploadTitle}>Upload certificate photo</Text>
+                  <Text style={styles.uploadText}>
+                    Use a clear image where your name, certificate title, and issuing body are readable.
+                  </Text>
+                </View>
+              )}
             </TouchableOpacity>
-          ) : (
-            <>
-              <Image source={{ uri: certificateUri }} style={styles.certificatePreview} />
-              <View style={styles.imageActions}>
+
+            {certificateUri ? (
+              <View style={styles.actionRow}>
                 <AppButton
-                  label="Choose Different Image"
+                  label="Change"
                   variant="outline"
-                  onPress={retakePhoto}
+                  icon={<Camera size={17} color={colors.primary} />}
+                  onPress={pickDocument}
+                  style={{ flex: 1 }}
+                />
+                <AppButton
+                  label={uploading ? "Submitting" : "Submit"}
+                  icon={<Upload size={17} color={colors.buttonText} />}
+                  onPress={handleUpload}
+                  loading={uploading}
                   style={{ flex: 1 }}
                 />
               </View>
-            </>
-          )}
+            ) : null}
+          </View>
+        ) : (
+          <View style={styles.section}>
+            <View style={styles.progressCard}>
+              <View style={styles.progressHeader}>
+                <Text style={styles.progressTitle}>Verification status</Text>
+                <Text style={styles.progressText}>Pending</Text>
+              </View>
+              <Text style={styles.subtitle}>
+                Your document has been submitted. You will unlock the main dashboard after approval.
+              </Text>
+            </View>
+          </View>
+        )}
 
-          {certificateUri && (
-            <AppButton
-              label="Submit for Verification"
-              onPress={handleUpload}
-              size="lg"
-              style={{ marginTop: 20 }}
-            />
-          )}
+        {uploading ? (
+          <View style={styles.progressCard}>
+            <View style={styles.progressHeader}>
+              <Text style={styles.progressTitle}>Uploading document</Text>
+              <Text style={styles.progressText}>{Math.round(uploadProgress)}%</Text>
+            </View>
+            <View style={styles.progressTrack}>
+              <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
+            </View>
+          </View>
+        ) : null}
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>What we check</Text>
+          <View style={styles.requirementCard}>
+            {REQUIREMENTS.map((requirement) => (
+              <View key={requirement} style={styles.requirementItem}>
+                <View style={styles.requirementIcon}>
+                  <CheckCircle size={17} color={colors.success} />
+                </View>
+                <Text style={styles.requirementText}>{requirement}</Text>
+              </View>
+            ))}
+            <View style={styles.reviewNote}>
+              <Star size={20} color={colors.primary} />
+              <Text style={styles.reviewNoteText}>
+                Verified mechanics appear more prominently and can receive service requests with a trust badge.
+              </Text>
+            </View>
+          </View>
         </View>
 
-        <View style={styles.requirementSection}>
-          <Text style={styles.requirementTitle}>Requirements</Text>
-
-          <View style={styles.requirementItem}>
-            <CheckCircle size={18} color={colors.success} style={styles.checkIcon} />
-            <Text style={styles.requirementText}>Valid professional mechanic certification or license</Text>
-          </View>
-
-          <View style={styles.requirementItem}>
-            <CheckCircle size={18} color={colors.success} style={styles.checkIcon} />
-            <Text style={styles.requirementText}>
-              Clear, readable image showing your name and certification details
+        <View style={styles.section}>
+          <View style={styles.reviewNote}>
+            <FileText size={20} color={colors.primary} />
+            <Text style={styles.reviewNoteText}>
+              If your document is rejected, you can upload a clearer copy from this screen.
             </Text>
           </View>
-
-          <View style={styles.requirementItem}>
-            <CheckCircle size={18} color={colors.success} style={styles.checkIcon} />
-            <Text style={styles.requirementText}>
-              Proof of current employment at an auto repair shop (optional, but recommended)
-            </Text>
-          </View>
-
-          <View style={styles.requirementItem}>
-            <CheckCircle size={18} color={colors.success} style={styles.checkIcon} />
-            <Text style={styles.requirementText}>Any specialized training certificates (optional)</Text>
-          </View>
-
-          <Text style={styles.noteText}>
-            Your certification will be reviewed by our team. This process usually takes 1-2 business days.
-          </Text>
         </View>
       </ScrollView>
     </View>

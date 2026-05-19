@@ -4,7 +4,7 @@ import { View, ActivityIndicator } from "react-native"
 import { useAuth } from "@/context/AuthContext"
 
 export default function Index() {
-  const { user, isInitialized } = useAuth()
+  const { user, isInitialized, mechanic } = useAuth()
 
   // Wait until SecureStore has been read before deciding where to go
   if (!isInitialized) {
@@ -16,6 +16,10 @@ export default function Index() {
   }
 
   // Already logged in → go straight to the app
+  if (user?.role === "mechanic" && !mechanic.isVerified) {
+    return <Redirect href="/(mechanic)/verification" />
+  }
+
   if (user) {
     return <Redirect href="/(tabs)" />
   }

@@ -17,7 +17,7 @@
 import { useState, useRef, useEffect } from "react"
 import {
   View, Text, TextInput, TouchableOpacity, Image,
-  StyleSheet, Alert, ScrollView, KeyboardAvoidingView,
+  StyleSheet, ScrollView, KeyboardAvoidingView,
   Platform, StatusBar, Animated as RNAnimated,
 } from "react-native"
 import { useRouter } from "expo-router"
@@ -27,6 +27,7 @@ import { useAuth } from "@/context/AuthContext"
 import { useTheme } from "@/context/ThemeContext"
 import { Spacing, Radius, FontSize, FontFamily, Shadows } from "@/constants/Theme"
 import AppButton from "@/components/AppButton"
+import { useAppModal } from "@/context/AppModalContext"
 import React from "react"
 
 export default function LoginScreen() {
@@ -39,6 +40,7 @@ export default function LoginScreen() {
   const router               = useRouter()
   const { signIn, isLoading } = useAuth()
   const { colors, isDark }    = useTheme()
+  const { showAlert }         = useAppModal()
 
   const passwordRef = useRef<TextInput>(null)
   const insets      = useSafeAreaInsets()
@@ -66,7 +68,7 @@ export default function LoginScreen() {
   // ── Handlers ──────────────────────────────────────────────────────────
   const handleLogin = async () => {
     if (!email.trim() || !password) {
-      Alert.alert("Missing fields", "Please enter your email and password.")
+      showAlert({ title: "Missing fields", message: "Please enter your email and password.", tone: "warning" })
       return
     }
     try {
@@ -74,7 +76,7 @@ export default function LoginScreen() {
       router.replace("/(tabs)")
     } catch (error) {
       const msg = error instanceof Error ? error.message : "Login failed. Please try again."
-      Alert.alert("Login Failed", msg)
+      showAlert({ title: "Login failed", message: msg, tone: "danger" })
     }
   }
 

@@ -9,6 +9,7 @@ import { ThemeProvider, useTheme } from "@/context/ThemeContext"
 import { DiagnosticsProvider } from "@/context/DiagnosticsContext"
 import { NotificationsProvider } from "@/context/NotificationsContext"
 import { AnalyticsProvider } from "@/context/AnalyticsContext"
+import { AppModalProvider } from "@/context/AppModalContext"
 import React from "react"
 
 // Controls the device status bar (time, battery, etc.) based on the current theme
@@ -117,9 +118,11 @@ export default function RootLayout() {
         <DiagnosticsProvider>
           <NotificationsProvider>
             <AnalyticsProvider>
-              <AppErrorBoundary>
-                <AppContent />
-              </AppErrorBoundary>
+              <AppModalProvider>
+                <AppErrorBoundary>
+                  <AppContent />
+                </AppErrorBoundary>
+              </AppModalProvider>
             </AnalyticsProvider>
           </NotificationsProvider>
         </DiagnosticsProvider>

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react"
 import {
   StyleSheet, Text, View, TouchableOpacity,
-  ActivityIndicator, ScrollView, Linking, Alert,
+  ActivityIndicator, ScrollView, Linking,
 } from "react-native"
 import { ExternalLink, Mic, Pause, Play, StopCircle } from "@/components/SafeLucide"
 import { Audio } from "expo-av"
@@ -18,6 +18,7 @@ import ScreenHeader, { SCREEN_HEADER_H } from "@/components/ScreenHeader"
 import React from "react"
 import { useDiagnosticsContext } from "@/context/DiagnosticsContext"
 import { createDiagnosticHistoryItem, getFallbackVideoLinks, getSafeVideoUrl } from "@/utils/diagnosticHistory"
+import { useAppModal } from "@/context/AppModalContext"
 
 type VideoLink = { title: string; url: string }
 
@@ -36,6 +37,7 @@ export default function SoundDiagnosisScreen() {
   const insets = useSafeAreaInsets()
   const recorderTimer = useRef<NodeJS.Timeout | number | null>(null)
   const { addDiagnostic } = useDiagnosticsContext()
+  const { showAlert } = useAppModal()
 
   // Waveform animations
   const a1 = useSharedValue(0)
@@ -71,7 +73,10 @@ export default function SoundDiagnosisScreen() {
     try {
       setIsPreparing(true)
       const perm = await Audio.requestPermissionsAsync()
-      if (perm.status !== "granted") { alert("Microphone permission required."); return }
+      if (perm.status !== "granted") {
+        showAlert({ title: "Permission required", message: "Microphone permission is required.", tone: "warning" })
+        return
+      }
       await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true })
       const { recording: newRecording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY)
       setRecording(newRecording)
@@ -171,7 +176,7 @@ export default function SoundDiagnosisScreen() {
 
   const openVideo = (link: VideoLink, issue?: string) => {
     Linking.openURL(getSafeVideoUrl(link, issue)).catch(() => {
-      Alert.alert("Could not open link", "Please check your connection and try again.")
+      showAlert({ title: "Could not open link", message: "Please check your connection and try again.", tone: "warning" })
     })
   }
 

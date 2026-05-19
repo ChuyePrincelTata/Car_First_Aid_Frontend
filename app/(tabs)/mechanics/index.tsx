@@ -1,7 +1,7 @@
 import React, { useState } from "react"
 import {
   StyleSheet, View, FlatList, TouchableOpacity,
-  Image, TextInput, Linking, Alert, Text,
+  Image, TextInput, Linking, Text,
 } from "react-native"
 import { useTheme } from "@/context/ThemeContext"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
@@ -11,6 +11,7 @@ import { Mechanic, mockMechanics } from "@/data/mockData"
 import { FontFamily, FontSize } from "@/constants/Theme"
 import ScreenHeader, { SCREEN_HEADER_H } from "@/components/ScreenHeader"
 import AppButton from "@/components/AppButton"
+import { useAppModal } from "@/context/AppModalContext"
 
 const GOLD = "#F59E0B"
 
@@ -18,6 +19,7 @@ export default function MechanicsScreen() {
   const { colors } = useTheme()
   const router     = useRouter()
   const insets     = useSafeAreaInsets()
+  const { showAlert } = useAppModal()
   const [searchQuery,     setSearchQuery]     = useState("")
   const [isSearchVisible, setIsSearchVisible] = useState(false)
 
@@ -38,9 +40,9 @@ export default function MechanicsScreen() {
     Linking.canOpenURL(url)
       .then((ok) => {
         if (ok) Linking.openURL(url)
-        else Alert.alert("WhatsApp not found", "Install WhatsApp to message this mechanic.")
+        else showAlert({ title: "WhatsApp not found", message: "Install WhatsApp to message this mechanic.", tone: "warning" })
       })
-      .catch(() => Alert.alert("Error", "Could not open WhatsApp."))
+      .catch(() => showAlert({ title: "Could not open WhatsApp", message: "Please try again or contact the mechanic by phone.", tone: "warning" }))
   }
 
   const renderStars = (rating: number) =>

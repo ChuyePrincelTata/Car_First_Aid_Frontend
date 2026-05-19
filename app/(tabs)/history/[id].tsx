@@ -1,5 +1,5 @@
 import React, { useState } from "react"
-import { Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 import { useLocalSearchParams, useRouter } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import AppButton from "@/components/AppButton"
@@ -23,6 +23,7 @@ import { FontFamily, FontSize, Radius, Spacing } from "@/constants/Theme"
 import { useDiagnosticsContext, type Diagnostic } from "@/context/DiagnosticsContext"
 import { useTheme } from "@/context/ThemeContext"
 import { getSafeVideoUrl } from "@/utils/diagnosticHistory"
+import { useAppModal } from "@/context/AppModalContext"
 
 const typeLabel: Record<Diagnostic["type"], string> = {
   dashboard: "Dashboard Photo",
@@ -43,6 +44,7 @@ export default function DiagnosisDetailScreen() {
   const insets = useSafeAreaInsets()
   const { colors, isDark } = useTheme()
   const { getDiagnosticById, toggleDiagnosticResolved, deleteDiagnostic } = useDiagnosticsContext()
+  const { showAlert } = useAppModal()
   const [confirmDeleteVisible, setConfirmDeleteVisible] = useState(false)
   const diagnosis = id ? getDiagnosticById(id) : null
 
@@ -90,7 +92,7 @@ export default function DiagnosisDetailScreen() {
 
   const openVideo = (link: { title: string; url: string }) => {
     Linking.openURL(getSafeVideoUrl(link, result?.issue)).catch(() => {
-      Alert.alert("Could not open link", "Please check your connection and try again.")
+      showAlert({ title: "Could not open link", message: "Please check your connection and try again.", tone: "warning" })
     })
   }
 
