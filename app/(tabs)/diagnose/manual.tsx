@@ -1,7 +1,7 @@
 import { useState } from "react"
 import {
   StyleSheet, Text, View, TextInput,
-  TouchableOpacity, ScrollView, ActivityIndicator, Linking, Alert,
+  TouchableOpacity, ScrollView, ActivityIndicator, Linking,
 } from "react-native"
 import { useTheme } from "@/context/ThemeContext"
 import { AlertTriangle, Play, Youtube, ExternalLink } from "@/components/SafeLucide"
@@ -13,6 +13,7 @@ import ScreenHeader, { SCREEN_HEADER_H } from "@/components/ScreenHeader"
 import React from "react"
 import { useDiagnosticsContext } from "@/context/DiagnosticsContext"
 import { createDiagnosticHistoryItem, getFallbackVideoLinks, getSafeVideoUrl } from "@/utils/diagnosticHistory"
+import { useAppModal } from "@/context/AppModalContext"
 
 type VideoLink = { title: string; url: string }
 
@@ -25,10 +26,11 @@ export default function ManualDiagnosisScreen() {
   const { colors, isDark } = useTheme()
   const insets = useSafeAreaInsets()
   const { addDiagnostic } = useDiagnosticsContext()
+  const { showAlert } = useAppModal()
 
   const analyzeProblem = () => {
     if (!description.trim() || !symptoms.trim()) {
-      alert("Please fill in both fields.")
+      showAlert({ title: "Missing details", message: "Please fill in both fields.", tone: "warning" })
       return
     }
     setDiagnosing(true)
@@ -67,7 +69,7 @@ export default function ManualDiagnosisScreen() {
 
   const openVideo = (link: VideoLink, issue?: string) => {
     Linking.openURL(getSafeVideoUrl(link, issue)).catch(() => {
-      Alert.alert("Could not open link", "Please check your connection and try again.")
+      showAlert({ title: "Could not open link", message: "Please check your connection and try again.", tone: "warning" })
     })
   }
 
