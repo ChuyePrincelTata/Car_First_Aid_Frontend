@@ -19,7 +19,7 @@
 import { useState, useMemo, useRef, useEffect } from "react"
 import {
   View, Text, TextInput, TouchableOpacity, Image,
-  StyleSheet, Alert, ScrollView, KeyboardAvoidingView,
+  StyleSheet, ScrollView, KeyboardAvoidingView,
   Platform, StatusBar, Animated as RNAnimated,
 } from "react-native"
 import { useRouter } from "expo-router"
@@ -32,6 +32,7 @@ import { useAuth } from "@/context/AuthContext"
 import { useTheme } from "@/context/ThemeContext"
 import { Spacing, Radius, FontSize, FontFamily, Shadows } from "@/constants/Theme"
 import AppButton from "@/components/AppButton"
+import { useAppModal } from "@/context/AppModalContext"
 import React from "react"
 
 /* ── Password rules ──────────────────────────────────────────────────────── */
@@ -58,6 +59,7 @@ export default function RegisterScreen() {
 
   const auth              = useAuth()
   const { colors, isDark } = useTheme()
+  const { showAlert }      = useAppModal()
   const router            = useRouter()
   const emailRef          = useRef<TextInput>(null)
   const passRef           = useRef<TextInput>(null)
@@ -93,16 +95,16 @@ export default function RegisterScreen() {
   // ── Handlers ──────────────────────────────────────────────────────────
   const handleRegister = async () => {
     if (!name.trim() || !email.trim() || !password) {
-      Alert.alert("Missing fields", "Please fill in all fields.")
+      showAlert({ title: "Missing fields", message: "Please fill in all fields.", tone: "warning" })
       return
     }
     if (!email.includes("@")) {
-      Alert.alert("Invalid email", "Please enter a valid email address.")
+      showAlert({ title: "Invalid email", message: "Please enter a valid email address.", tone: "warning" })
       return
     }
     if (!allRulesPassed) {
       setShowRequirements(true)
-      Alert.alert("Weak password", "Please meet all password requirements before continuing.")
+      showAlert({ title: "Weak password", message: "Please meet all password requirements before continuing.", tone: "warning" })
       return
     }
     setIsLoading(true)
@@ -112,11 +114,11 @@ export default function RegisterScreen() {
     } catch (error) {
       const msg = error instanceof Error ? error.message : "Registration failed. Please try again."
       if (msg.toLowerCase().includes("already registered") || msg.toLowerCase().includes("email already")) {
-        Alert.alert("Email taken", "This email is already registered. Try signing in instead.")
+        showAlert({ title: "Email taken", message: "This email is already registered. Try signing in instead.", tone: "warning" })
       } else if (msg.includes("network") || msg.includes("connection")) {
-        Alert.alert("No connection", "Please check your internet connection and try again.")
+        showAlert({ title: "No connection", message: "Please check your internet connection and try again.", tone: "warning" })
       } else {
-        Alert.alert("Registration failed", msg)
+        showAlert({ title: "Registration failed", message: msg, tone: "danger" })
       }
     } finally {
       setIsLoading(false)
