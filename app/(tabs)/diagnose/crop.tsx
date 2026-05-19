@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Check, X, RotateCw } from "@/components/SafeLucide"
 import { FontFamily, FontSize } from "@/constants/Theme"
 import { useTheme } from "@/context/ThemeContext"
+import { useAppModal } from "@/context/AppModalContext"
 import * as ImageManipulator from "expo-image-manipulator"
 import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler"
 import Animated, { useSharedValue, useAnimatedStyle } from "react-native-reanimated"
@@ -18,6 +19,7 @@ export default function CropScreen() {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const { isDark, colors } = useTheme()
+  const { showAlert } = useAppModal()
   
   const [processing, setProcessing] = useState(false)
   const [rotation, setRotation] = useState(0)
@@ -182,7 +184,7 @@ export default function CropScreen() {
 
     } catch (e) {
       console.error("Cropping failed", e)
-      alert("Failed to crop image mathematically.")
+      showAlert({ title: "Crop failed", message: "Failed to crop image. Please try again.", tone: "danger" })
     } finally {
       setProcessing(false)
     }
