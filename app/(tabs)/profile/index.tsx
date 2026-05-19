@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react"
 import {
-  Alert,
   Linking,
   Modal,
   ScrollView,
@@ -40,6 +39,7 @@ import { useAuth } from "@/context/AuthContext"
 import { useAnalytics } from "@/context/AnalyticsContext"
 import { useNotificationsContext } from "@/context/NotificationsContext"
 import { useTheme } from "@/context/ThemeContext"
+import { useAppModal } from "@/context/AppModalContext"
 
 type Panel = "edit" | "privacy" | "settings" | "help" | null
 
@@ -59,6 +59,7 @@ export default function ProfileScreen() {
   const { colors, theme, isDark, toggleTheme } = useTheme()
   const { user, signOut, updateProfile, updateMechanicInfo, isOffline, mechanic } = useAuth()
   const analytics = useAnalytics()
+  const { showAlert } = useAppModal()
   const {
     unreadCount,
     notificationsEnabled,
@@ -121,7 +122,7 @@ export default function ProfileScreen() {
 
   const handleSaveProfile = async () => {
     if (!profileForm.name.trim() || !profileForm.email.trim()) {
-      Alert.alert("Missing details", "Please enter your name and email.")
+      showAlert({ title: "Missing details", message: "Please enter your name and email.", tone: "warning" })
       return
     }
 
@@ -153,7 +154,7 @@ export default function ProfileScreen() {
         role: user?.role ?? "guest",
       })
     } catch (error) {
-      Alert.alert("Could not save profile", error instanceof Error ? error.message : "Please try again.")
+      showAlert({ title: "Could not save profile", message: error instanceof Error ? error.message : "Please try again.", tone: "danger" })
     } finally {
       setSavingProfile(false)
     }
@@ -169,7 +170,7 @@ export default function ProfileScreen() {
   const contactSupport = () => {
     analytics.track("support_contact_opened")
     Linking.openURL("mailto:support@carfirstaid.app?subject=Car%20First%20Aid%20Support").catch(() => {
-      Alert.alert("Could not open email", "Please email support@carfirstaid.app directly.")
+      showAlert({ title: "Could not open email", message: "Please email support@carfirstaid.app directly.", tone: "warning" })
     })
   }
 
@@ -671,7 +672,7 @@ export default function ProfileScreen() {
                     variant="outline"
                     onPress={() => {
                       analytics.clearAnalytics()
-                      Alert.alert("Analytics cleared", "Local usage analytics have been deleted.")
+                      showAlert({ title: "Analytics cleared", message: "Local usage analytics have been deleted.", tone: "success" })
                     }}
                     style={{ marginTop: Spacing.lg }}
                   />
