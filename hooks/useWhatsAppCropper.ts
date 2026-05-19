@@ -1,5 +1,6 @@
 import * as ImagePicker from "expo-image-picker"
 import Constants from "expo-constants"
+import { useAppModal } from "@/context/AppModalContext"
 
 export type CropResult = {
   uri: string
@@ -8,6 +9,7 @@ export type CropResult = {
 } | null
 
 export function useWhatsAppCropper() {
+  const { showAlert } = useAppModal()
 
   const isExpoGo = Constants.appOwnership === 'expo'
 
@@ -15,7 +17,7 @@ export function useWhatsAppCropper() {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
       if (status !== 'granted') {
-        alert('Camera roll permission is required.')
+        showAlert({ title: "Permission required", message: "Camera roll permission is required.", tone: "warning" })
         return undefined
       }
 
@@ -82,7 +84,7 @@ export function useWhatsAppCropper() {
     try {
       const { status } = await ImagePicker.requestCameraPermissionsAsync()
       if (status !== 'granted') {
-        alert('Camera permission is required.')
+        showAlert({ title: "Permission required", message: "Camera permission is required.", tone: "warning" })
         return undefined
       }
 

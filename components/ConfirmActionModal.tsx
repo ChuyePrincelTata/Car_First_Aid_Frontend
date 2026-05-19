@@ -28,6 +28,8 @@ export default function ConfirmActionModal({
 }: Props) {
   const { colors, isDark } = useTheme()
 
+  const toneColor = destructive ? colors.error : colors.primary
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <Pressable style={styles.backdrop} onPress={onCancel}>
@@ -43,10 +45,10 @@ export default function ConfirmActionModal({
           <View
             style={[
               styles.iconWrap,
-              { backgroundColor: destructive ? colors.error + "18" : colors.primary + "18" },
+              { backgroundColor: toneColor + "18" },
             ]}
           >
-            <AlertTriangle size={24} color={destructive ? colors.error : colors.primary} />
+            <AlertTriangle size={26} color={toneColor} />
           </View>
 
           <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
@@ -75,7 +77,7 @@ export default function ConfirmActionModal({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.45)",
+    backgroundColor: "rgba(10, 15, 28, 0.58)",
     justifyContent: "center",
     padding: Spacing.xl,
   },
@@ -84,11 +86,16 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     padding: Spacing.xl,
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.18,
+    shadowRadius: 22,
+    elevation: 12,
   },
   iconWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: Spacing.md,

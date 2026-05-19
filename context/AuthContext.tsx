@@ -62,6 +62,8 @@ type MechanicInfo = {
   address?: string
 }
 
+type MechanicVerificationStatus = "unsubmitted" | "pending" | "approved" | "rejected"
+
 type User = {
   id: number
   email: string
@@ -75,6 +77,7 @@ type User = {
   emergencyContact?: string
   preferredLanguage?: string
   mechanicInfo?: MechanicInfo
+  mechanicVerificationStatus?: MechanicVerificationStatus
 }
 
 type AuthContextType = {
@@ -91,7 +94,9 @@ type AuthContextType = {
   updateMechanicInfo: (info: MechanicInfo) => Promise<void>
   mechanic: {
     uploadCertificate: (certificateUri: string) => Promise<void>
+    refreshVerificationStatus: () => Promise<MechanicVerificationStatus>
     isVerified: boolean
+    verificationStatus: MechanicVerificationStatus
   }
 }
 
@@ -102,7 +107,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
-  const [isMechanicVerified, setIsMechanicVerified] = useState(false)
+  const [mechanicVerificationStatus, setMechanicVerificationStatus] =
+    useState<MechanicVerificationStatus>("unsubmitted")
   const [isOffline, setIsOffline] = useState(false)
   const [apiUrl, setApiUrl] = useState(API_BASE_URL)
 
@@ -143,8 +149,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const userJSON = await secureStore.getItemAsync("user")
 
         if (storedToken && userJSON) {
+          const parsedUser = JSON.parse(userJSON) as User
           setToken(storedToken)
-          setUser(JSON.parse(userJSON))
+          setUser(parsedUser)
+          if (parsedUser.role === "mechanic") {
+            setMechanicVerificationStatus(parsedUser.mechanicVerificationStatus ?? "unsubmitted")
+            refreshMechanicVerificationStatus(storedToken, parsedUser).catch((error) => {
+              console.warn("Could not refresh mechanic verification status:", error)
+            })
+          }
         }
       } catch (error) {
         console.error("Failed to load user from storage", error)
@@ -155,6 +168,60 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     loadUser()
   }, [])
+
+  const applyMechanicVerificationStatus = async (
+    status: MechanicVerificationStatus,
+    userToUpdate: User | null = user,
+  ) => {
+    setMechanicVerificationStatus(status)
+    if (!userToUpdate || userToUpdate.role !== "mechanic") return
+
+    const updatedUser = { ...userToUpdate, mechanicVerificationStatus: status }
+    setUser(updatedUser)
+    await secureStore.setItemAsync("user", JSON.stringify(updatedUser))
+  }
+
+  const refreshMechanicVerificationStatus = async (
+    authToken: string | null = token,
+    userToCheck: User | null = user,
+  ): Promise<MechanicVerificationStatus> => {
+    if (!authToken || !userToCheck || userToCheck.role !== "mechanic") return "approved"
+
+    const netInfo = await NetInfo.fetch()
+    if (!netInfo.isConnected) {
+      return userToCheck.mechanicVerificationStatus ?? mechanicVerificationStatus
+    }
+
+    try {
+      const response = await fetchWithTimeout(`${apiUrl || CLOUD_BACKEND_URL}/mechanics/me`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      })
+
+      if (!response.ok) {
+        const fallback = userToCheck.mechanicVerificationStatus ?? "unsubmitted"
+        await applyMechanicVerificationStatus(fallback, userToCheck)
+        return fallback
+      }
+
+      const mechanicProfile = await response.json()
+      const rawStatus = mechanicProfile.verification_status
+      const status: MechanicVerificationStatus =
+        rawStatus === "pending" && !mechanicProfile.certificate_url
+          ? "unsubmitted"
+          : rawStatus === "approved" || rawStatus === "pending" || rawStatus === "rejected"
+          ? rawStatus
+          : "unsubmitted"
+
+      await applyMechanicVerificationStatus(status, userToCheck)
+      return status
+    } catch (error) {
+      console.warn("Failed to refresh mechanic verification status:", error)
+      return userToCheck.mechanicVerificationStatus ?? mechanicVerificationStatus
+    }
+  }
 
   // Check if user exists in local database
   const checkLocalUser = async (email: string, password: string): Promise<User | null> => {
@@ -280,16 +347,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
 
           const data = await response.json()
+          const nextUser: User = {
+            ...data.user,
+            mechanicVerificationStatus:
+              data.user.role === "mechanic" ? data.user.mechanicVerificationStatus ?? "unsubmitted" : undefined,
+          }
 
           // Save to secure storage
           await secureStore.setItemAsync("token", data.access_token)
-          await secureStore.setItemAsync("user", JSON.stringify(data.user))
+          await secureStore.setItemAsync("user", JSON.stringify(nextUser))
 
           // Also save to local database for offline access
-          await saveLocalUser(data.user, password)
+          await saveLocalUser(nextUser, password)
 
           setToken(data.access_token)
-          setUser(data.user)
+          setUser(nextUser)
+          if (nextUser.role === "mechanic") {
+            await refreshMechanicVerificationStatus(data.access_token, nextUser)
+          }
           return // success — exit the retry loop
 
         } catch (error: any) {
@@ -356,21 +431,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               errorDetail = errorText || errorDetail
             }
 
+            if (errorDetail.trim() === "An unexpected error occurred:") {
+              errorDetail = "Registration failed on the server. The email may already be registered, or the backend needs to be redeployed."
+            }
+
             // Don't retry on server-side validation errors
             throw new Error(errorDetail)
           }
 
           const data = await response.json()
+          const nextUser: User = {
+            ...data.user,
+            mechanicVerificationStatus: role === "mechanic" ? "unsubmitted" : undefined,
+          }
 
           // Save to secure storage
           await secureStore.setItemAsync("token", data.access_token)
-          await secureStore.setItemAsync("user", JSON.stringify(data.user))
+          await secureStore.setItemAsync("user", JSON.stringify(nextUser))
 
           // Also save to local database for offline access
-          await saveLocalUser(data.user, password)
+          await saveLocalUser(nextUser, password)
 
           setToken(data.access_token)
-          setUser(data.user)
+          setUser(nextUser)
+          if (role === "mechanic") {
+            setMechanicVerificationStatus("unsubmitted")
+          }
           return // success
 
         } catch (error: any) {
@@ -457,6 +543,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await secureStore.deleteItemAsync("user")
       setUser(null)
       setToken(null)
+      setMechanicVerificationStatus("unsubmitted")
     } catch (error) {
       console.error("Error signing out", error)
       throw error
@@ -493,7 +580,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error("Failed to upload certificate")
       }
 
-      setIsMechanicVerified(true)
+      await applyMechanicVerificationStatus("pending")
     } catch (error) {
       console.error("Error uploading certificate", error)
       throw error
@@ -516,7 +603,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateMechanicInfo,
         mechanic: {
           uploadCertificate,
-          isVerified: isMechanicVerified,
+          refreshVerificationStatus: () => refreshMechanicVerificationStatus(),
+          isVerified: mechanicVerificationStatus === "approved",
+          verificationStatus: mechanicVerificationStatus,
         },
       }}
     >
