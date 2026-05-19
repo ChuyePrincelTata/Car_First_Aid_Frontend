@@ -1,7 +1,7 @@
 import { useState, useRef } from "react"
 import {
   StyleSheet, Text, View, TouchableOpacity, Image,
-  ActivityIndicator, ScrollView, Dimensions, Linking, Alert,
+  ActivityIndicator, ScrollView, Dimensions, Linking,
 } from "react-native"
 import { Camera, Upload, ExternalLink, Youtube } from "@/components/SafeLucide"
 import { useTheme } from "@/context/ThemeContext"
@@ -17,6 +17,7 @@ import { useLocalSearchParams } from "expo-router"
 import React, { useEffect } from "react"
 import { useDiagnosticsContext } from "@/context/DiagnosticsContext"
 import { createDiagnosticHistoryItem, getFallbackVideoLinks, getSafeVideoUrl } from "@/utils/diagnosticHistory"
+import { useAppModal } from "@/context/AppModalContext"
 
 const { width } = Dimensions.get("window")
 
@@ -36,6 +37,7 @@ export default function DiagnoseScreen() {
   const params = useLocalSearchParams<{ croppedUri?: string }>()
   const { launchCamera, launchCropper } = useWhatsAppCropper()
   const { addDiagnostic } = useDiagnosticsContext()
+  const { showAlert } = useAppModal()
 
   // Listen for the returning cropped URI from our Expo Go JS fallback cropper
   useEffect(() => {
@@ -70,7 +72,7 @@ export default function DiagnoseScreen() {
 
   const openVideo = (link: VideoLink, issue?: string) => {
     Linking.openURL(getSafeVideoUrl(link, issue)).catch(() => {
-      Alert.alert("Could not open link", "Please check your connection and try again.")
+      showAlert({ title: "Could not open link", message: "Please check your connection and try again.", tone: "warning" })
     })
   }
 
