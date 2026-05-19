@@ -13,7 +13,7 @@
 import { useState, useRef, useEffect } from "react"
 import {
   View, Text, TextInput, TouchableOpacity, Image,
-  StyleSheet, Alert, ScrollView, KeyboardAvoidingView,
+  StyleSheet, ScrollView, KeyboardAvoidingView,
   Platform, StatusBar, Animated as RNAnimated,
 } from "react-native"
 import { useRouter } from "expo-router"
@@ -26,6 +26,7 @@ import { useAuth } from "@/context/AuthContext"
 import { useTheme } from "@/context/ThemeContext"
 import { Spacing, Radius, FontSize, FontFamily, Shadows } from "@/constants/Theme"
 import AppButton from "@/components/AppButton"
+import { useAppModal } from "@/context/AppModalContext"
 import React from "react"
 
 type Step = "method" | "otp" | "newpass" | "success"
@@ -57,6 +58,7 @@ export default function ForgotPasswordScreen() {
   const router             = useRouter()
   const { colors, isDark } = useTheme()
   const { apiUrl }         = useAuth()
+  const { showAlert }      = useAppModal()
   const insets             = useSafeAreaInsets()
 
   const otpRefs = useRef<(TextInput | null)[]>([])
@@ -90,11 +92,11 @@ export default function ForgotPasswordScreen() {
   // ── Handlers ──────────────────────────────────────────────────────────
   const handleSendOTP = async () => {
     if (!contact.trim()) {
-      Alert.alert("Required", `Please enter your ${method === "email" ? "email address" : "phone number"}.`)
+      showAlert({ title: "Required", message: `Please enter your ${method === "email" ? "email address" : "phone number"}.`, tone: "warning" })
       return
     }
     if (method === "email" && !contact.includes("@")) {
-      Alert.alert("Invalid email", "Please enter a valid email address.")
+      showAlert({ title: "Invalid email", message: "Please enter a valid email address.", tone: "warning" })
       return
     }
     setIsLoading(true)
@@ -114,7 +116,7 @@ export default function ForgotPasswordScreen() {
   const handleVerifyOTP = async () => {
     const code = otp.join("")
     if (code.length < 6) {
-      Alert.alert("Incomplete code", "Please enter the full 6-digit code.")
+      showAlert({ title: "Incomplete code", message: "Please enter the full 6-digit code.", tone: "warning" })
       return
     }
     setIsLoading(true)
@@ -129,11 +131,11 @@ export default function ForgotPasswordScreen() {
 
   const handleResetPassword = async () => {
     if (!allRulesPassed) {
-      Alert.alert("Weak password", "Please meet all password requirements.")
+      showAlert({ title: "Weak password", message: "Please meet all password requirements.", tone: "warning" })
       return
     }
     if (password !== confirmPass) {
-      Alert.alert("Mismatch", "Passwords do not match.")
+      showAlert({ title: "Mismatch", message: "Passwords do not match.", tone: "warning" })
       return
     }
     setIsLoading(true)
