@@ -1,7 +1,7 @@
 import React from "react"
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Image, Linking, Alert, Dimensions,
+  Image, Linking, Dimensions,
 } from "react-native"
 import { useLocalSearchParams, useRouter } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
@@ -15,6 +15,7 @@ import { FontFamily, FontSize, Spacing, Radius } from "@/constants/Theme"
 import { mockMechanics } from "@/data/mockData"
 import AppButton from "@/components/AppButton"
 import ScreenHeader, { SCREEN_HEADER_H } from "@/components/ScreenHeader"
+import { useAppModal } from "@/context/AppModalContext"
 
 const GOLD = "#F59E0B"
 
@@ -23,6 +24,7 @@ export default function MechanicProfileScreen() {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const { colors, isDark } = useTheme()
+  const { showAlert } = useAppModal()
 
   const mechanic = mockMechanics.find((m) => m.id === id)
 
@@ -44,7 +46,7 @@ export default function MechanicProfileScreen() {
     const url = `whatsapp://send?phone=${mechanic.phone}&text=${msg}`
     Linking.canOpenURL(url).then((ok) => {
       if (ok) Linking.openURL(url)
-      else Alert.alert("WhatsApp not found", "Install WhatsApp to message this mechanic.")
+      else showAlert({ title: "WhatsApp not found", message: "Install WhatsApp to message this mechanic.", tone: "warning" })
     })
   }
 
